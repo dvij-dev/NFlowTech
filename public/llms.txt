@@ -1,0 +1,27 @@
+# NFlow Tech — AI-Driven Digital Marketing Agency
+
+## About
+NFlow Technologies is an AI-driven digital marketing agency that helps businesses grow through data-driven PPC, SEO, social media advertising, and conversion-led web design. Founded in 2017, we have served 138+ brands across 27+ industries.
+
+## Services
+- **PPC Advertising**: AI-powered Google Ads, Microsoft Ads, and display network management
+- **Social Media Advertising**: Meta (Facebook/Instagram), TikTok, LinkedIn, Pinterest campaigns
+- **SEO Services**: Technical SEO, content strategy, link building, and local SEO
+- **Web Design**: Conversion-focused, psychology-based web design and development
+
+## Key Facts
+- 138+ brands served
+- 27+ industries
+- 5x average ROAS
+- $10M+ ad spend managed
+- Based in Ahmedabad, India with global clients
+
+## Contact
+- Website: https://www.nflowtech.com
+- Email: hello@nflowtech.com
+- Location: Ahmedabad, Gujarat, India
+
+## Subscription Plans
+- Standard: $1,499/month (60 hours)
+- Advance: $1,760/month (80 hours)
+- Premium: $2,880/month (160 hours)
