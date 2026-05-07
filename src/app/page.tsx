@@ -6,7 +6,16 @@ import Link from 'next/link'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { siteConfig, caseStudies, services, founder } from '@/data/site-data'
-import GrowthOrbit from '@/components/GrowthOrbit'
+import dynamic from 'next/dynamic'
+
+const BigBangJourney = dynamic(() => import('@/components/BigBangJourney'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-screen bg-black flex items-center justify-center">
+      <div className="text-white/20 text-sm tracking-widest uppercase font-mono">Loading experience...</div>
+    </div>
+  ),
+})
 import MagneticButton from '@/components/MagneticButton'
 import TextReveal from '@/components/TextReveal'
 import RevealOnScroll from '@/components/RevealOnScroll'
@@ -312,8 +321,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* The Growth Orbit — scroll-driven storytelling journey */}
-      <GrowthOrbit />
+      {/* The Big Bang — scroll-driven 3D storytelling journey */}
+      <BigBangJourney />
 
       {/* Trust Marquee */}
       <TrustMarquee />
