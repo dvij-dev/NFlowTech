@@ -1,96 +1,79 @@
-"use client";
+'use client'
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from 'react'
 
-export function useInView<T extends HTMLElement = HTMLDivElement>(options?: IntersectionObserverInit) {
-  const ref = useRef<T>(null);
-  const [isInView, setIsInView] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsInView(true);
-          observer.unobserve(el);
-        }
-      },
-      { threshold: 0.15, ...options }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  return { ref, isInView };
-}
-
-export function useCounter(end: number, duration = 2000, startOnView = true) {
-  const [count, setCount] = useState(0);
-  const [started, setStarted] = useState(!startOnView);
-  const ref = useRef<HTMLDivElement>(null);
-
-  const start = useCallback(() => setStarted(true), []);
+export function useInView<T extends HTMLElement = HTMLDivElement>(
+  options?: IntersectionObserverInit
+) {
+  const ref = useRef<T>(null)
+  const [isInView, setIsInView] = useState(false)
 
   useEffect(() => {
-    if (!startOnView) return;
-    const el = ref.current;
-    if (!el) return;
+    const el = ref.current
+    if (!el) return
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setStarted(true);
-          observer.unobserve(el);
-        }
-      },
-      { threshold: 0.5 }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [startOnView]);
-
-  useEffect(() => {
-    if (!started) return;
-
-    let startTime: number;
-    const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-      setCount(Math.floor(eased * end));
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsInView(true)
+        observer.unobserve(el)
       }
-    };
+    }, { threshold: 0.1, ...options })
 
-    requestAnimationFrame(animate);
-  }, [started, end, duration]);
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
-  return { count, ref, start };
+  return { ref, isInView }
 }
 
-export function useParallax(speed = 0.5) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [offset, setOffset] = useState(0);
+export function useCounter(end: number, duration: number = 2000) {
+  const [count, setCount] = useState(0)
+  const ref = useRef<HTMLDivElement>(null)
+  const started = useRef(false)
 
   useEffect(() => {
-    const onScroll = () => {
-      const el = ref.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const center = rect.top + rect.height / 2;
-      const viewCenter = window.innerHeight / 2;
-      setOffset((center - viewCenter) * speed * 0.1);
-    };
+    const el = ref.current
+    if (!el) return
 
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [speed]);
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !started.current) {
+        started.current = true
+        const startTime = performance.now()
+        const animate = (now: number) => {
+          const progress = Math.min((now - startTime) / duration, 1)
+          const eased = 1 - Math.pow(1 - progress, 3)
+          setCount(Math.floor(eased * end))
+          if (progress < 1) requestAnimationFrame(animate)
+        }
+        requestAnimationFrame(animate)
+      }
+    }, { threshold: 0.3 })
 
-  return { ref, offset };
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [end, duration])
+
+  return { count, ref }
+}
+
+export function useScrollProgress() {
+  const [progress, setProgress] = useState(0)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const total = document.documentElement.scrollHeight - window.innerHeight
+      setProgress(total > 0 ? window.scrollY / total : 0)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  return progress
+}
+
+export function useSmoothScroll() {
+  return useCallback((id: string) => {
+    const el = document.getElementById(id)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
 }

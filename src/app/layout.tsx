@@ -1,72 +1,50 @@
-import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Playfair_Display, JetBrains_Mono } from "next/font/google";
-import "./globals.css";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { JsonLd } from "@/components/layout/JsonLd";
-import { organizationSchema, websiteSchema } from "@/lib/schema";
+import type { Metadata } from 'next'
+import { Plus_Jakarta_Sans, Playfair_Display, JetBrains_Mono } from 'next/font/google'
+import './globals.css'
+import { Header } from '@/components/Header'
+import { Footer } from '@/components/Footer'
 
-const sans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  display: "swap",
-});
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-jakarta',
+  display: 'swap',
+})
 
-const display = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-});
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  display: 'swap',
+})
 
-const mono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-  display: "swap",
-});
+const jetbrains = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-jetbrains',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://nflowtech.com"),
-  title: {
-    default: "NFlow Tech — AI-Driven Digital Marketing Agency",
-    template: "%s | NFlow Tech",
-  },
-  description:
-    "We turn ad spend into measurable growth. NFlow Tech combines data science, creative strategy, and proven advertising tactics to generate qualified leads and scale revenue across 27+ industries.",
+  title: 'NFlow Technologies — Excellence In Digital Strategy',
+  description: 'We combine creativity, AI, data, and tech to help you scale smarter, rank faster, and connect deeper to target audiences with exceptional digital strategies.',
   openGraph: {
-    type: "website",
-    locale: "en_US",
-    siteName: "NFlow Tech",
-    images: [{ url: "/images/hero/og.png", width: 1200, height: 630 }],
+    title: 'NFlow Technologies — Excellence In Digital Strategy',
+    description: 'Result-driven digital marketing for 138+ brands across 27+ industries.',
+    url: 'https://nflowtech.com',
+    siteName: 'NFlow Technologies',
+    type: 'website',
   },
-  twitter: {
-    card: "summary_large_image",
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
+}
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${display.variable} ${mono.variable}`}>
-      <body className="font-sans bg-navy-950 text-white antialiased">
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-accent focus:text-white focus:rounded-lg"
-        >
-          Skip to main content
+    <html lang="en" className={`${jakarta.variable} ${playfair.variable} ${jetbrains.variable}`}>
+      <body className="font-sans noise-overlay">
+        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-sky-500 focus:text-white focus:rounded-lg">
+          Skip to content
         </a>
         <Header />
-        <main id="main-content">{children}</main>
+        <main id="main">{children}</main>
         <Footer />
-        <JsonLd data={organizationSchema} />
-        <JsonLd data={websiteSchema} />
       </body>
     </html>
-  );
+  )
 }

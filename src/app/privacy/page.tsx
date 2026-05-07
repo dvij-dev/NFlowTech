@@ -1,40 +1,45 @@
-import type { Metadata } from "next";
+'use client'
 
-export const metadata: Metadata = {
-  title: "Privacy Policy",
-  description: "NFlow Tech privacy policy — how we collect, use, and protect your data.",
-};
+import { siteConfig } from '@/data/site-data'
+import { AnimatedSection } from '@/components/AnimatedSection'
+import { SectionLabel } from '@/components/SectionLabel'
 
 export default function PrivacyPage() {
   return (
-    <section className="section-dark pt-32 pb-24 md:pt-40 md:pb-32">
-      <div className="container-wide max-w-3xl">
-        <h1 className="text-display-lg font-display font-bold mb-8">Privacy Policy</h1>
-        <div className="prose prose-invert prose-sm max-w-none space-y-6 text-white/60">
-          <p className="text-white/50 text-sm">Last updated: January 2025</p>
+    <section className="section-pad pt-40 pb-32">
+      <div className="max-w-3xl mx-auto">
+        <AnimatedSection>
+          <SectionLabel>Legal</SectionLabel>
+          <h1 className="text-display font-display font-bold text-white mb-8">Privacy Policy</h1>
+        </AnimatedSection>
 
-          <h2 className="text-xl font-bold text-white mt-8">1. Information We Collect</h2>
-          <p>We collect information you provide directly (name, email, company, phone number) when you fill out our contact form, request an audit, or subscribe to our newsletter. We also collect usage data through cookies and analytics tools.</p>
-
-          <h2 className="text-xl font-bold text-white mt-8">2. How We Use Your Information</h2>
-          <p>We use the information to respond to your inquiries, provide our marketing services, send relevant communications, improve our website, and comply with legal obligations.</p>
-
-          <h2 className="text-xl font-bold text-white mt-8">3. Data Sharing</h2>
-          <p>We do not sell your personal information. We may share data with trusted service providers who assist in operating our website and conducting our business (e.g., email service providers, analytics tools), always under strict confidentiality agreements.</p>
-
-          <h2 className="text-xl font-bold text-white mt-8">4. Cookies</h2>
-          <p>We use essential cookies for site functionality and analytics cookies (Google Analytics) to understand how visitors interact with our site. You can control cookie preferences through your browser settings.</p>
-
-          <h2 className="text-xl font-bold text-white mt-8">5. Data Security</h2>
-          <p>We implement industry-standard security measures to protect your personal information. However, no method of transmission over the Internet is 100% secure.</p>
-
-          <h2 className="text-xl font-bold text-white mt-8">6. Your Rights</h2>
-          <p>You have the right to access, correct, or delete your personal data. To exercise these rights, contact us at hello@nflowtech.com.</p>
-
-          <h2 className="text-xl font-bold text-white mt-8">7. Contact Us</h2>
-          <p>If you have questions about this privacy policy, please contact us at hello@nflowtech.com.</p>
-        </div>
+        <AnimatedSection delay={200} className="prose prose-invert prose-slate max-w-none">
+          <div className="space-y-6 text-slate-400 leading-relaxed">
+            <p>
+              At {siteConfig.fullName}, we are committed to protecting your privacy. This Privacy Policy explains how we collect,
+              use, and safeguard your information when you visit our website.
+            </p>
+            <h3 className="text-white font-bold text-lg">Information We Collect</h3>
+            <p>
+              We may collect information you provide directly, such as your name, email address, phone number,
+              and any other information you submit through our contact forms.
+            </p>
+            <h3 className="text-white font-bold text-lg">How We Use Your Information</h3>
+            <p>
+              We use the information we collect to respond to your inquiries, provide our services,
+              improve our website, and send periodic emails regarding your project or other products and services.
+            </p>
+            <h3 className="text-white font-bold text-lg">Contact Us</h3>
+            <p>
+              If you have any questions about this Privacy Policy, please contact us at{' '}
+              <a href={`mailto:${siteConfig.email}`} className="text-sky-400 hover:text-sky-300">{siteConfig.email}</a>.
+            </p>
+            <p className="text-sm text-slate-500">
+              Copyright © {new Date().getFullYear()} {siteConfig.legalName}. All Rights Reserved.
+            </p>
+          </div>
+        </AnimatedSection>
       </div>
     </section>
-  );
+  )
 }
