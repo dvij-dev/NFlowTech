@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useMemo, useState, useCallback } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Stars, Float, Trail, Text, Billboard } from '@react-three/drei'
+import { Stars, Billboard, Text } from '@react-three/drei'
 import * as THREE from 'three'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -12,8 +12,160 @@ gsap.registerPlugin(ScrollTrigger)
 // ─── Shared scroll progress ────────────────────────────
 const scrollState = { progress: 0 }
 
-// ─── Particle System (Instanced for performance) ───────
-function ExplosionParticles({ count = 2000 }: { count?: number }) {
+/*
+ * NARRATIVE PHASES (scroll 0→1):
+ * 0.00–0.06  PHASE 1: Clean white calm. A gentle glow appears at center.
+ * 0.06–0.14  PHASE 2: Color bleeds outward from center. Energy manifesting.
+ * 0.14–0.22  PHASE 3: A sphere/seed forms. Your potential crystallizing.
+ * 0.22–0.30  PHASE 4: Cracks appear. Shell fragments drift. The old way shatters.
+ * 0.30–0.40  PHASE 5: THE BANG. Explosion. Particles fly. Universe born. Scene flips dark.
+ * 0.40–0.50  PHASE 6: Chaos settling. Nebula forming. Central star ignites.
+ * 0.50–0.60  PHASE 7: First orbit (PPC) locks in.
+ * 0.60–0.70  PHASE 8: Second orbit (Social) forms.
+ * 0.70–0.78  PHASE 9: Third orbit (SEO) + Fourth orbit (Design).
+ * 0.78–1.00  PHASE 10: Full universe. Stats. Empire.
+ */
+
+// ─── Cosmic Egg (the seed before the bang) ─────────────
+function CosmicEgg() {
+  const shellRef = useRef<THREE.Mesh>(null!)
+  const innerGlowRef = useRef<THREE.Mesh>(null!)
+  const fragmentsRef = useRef<THREE.Group>(null!)
+  
+  // Generate shell fragment meshes
+  const fragments = useMemo(() => {
+    const frags = []
+    for (let i = 0; i < 20; i++) {
+      const theta = Math.random() * Math.PI * 2
+      const phi = Math.acos(2 * Math.random() - 1)
+      frags.push({
+        dir: new THREE.Vector3(
+          Math.sin(phi) * Math.cos(theta),
+          Math.sin(phi) * Math.sin(theta),
+          Math.cos(phi)
+        ),
+        rotAxis: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize(),
+        rotSpeed: 0.5 + Math.random() * 2,
+        scale: 0.3 + Math.random() * 0.5,
+      })
+    }
+    return frags
+  }, [])
+
+  useFrame(({ clock }) => {
+    const p = scrollState.progress
+    const t = clock.getElapsedTime()
+
+    // Phase 1-2: Egg appears and grows
+    if (p < 0.14) {
+      shellRef.current.visible = true
+      const appear = Math.max(0, (p - 0.06) / 0.08)
+      const pulse = 1 + Math.sin(t * 1.5) * 0.03
+      shellRef.current.scale.setScalar(appear * 1.2 * pulse)
+      ;(shellRef.current.material as THREE.MeshStandardMaterial).opacity = appear * 0.8
+      
+      innerGlowRef.current.scale.setScalar(appear * 1.5)
+      ;(innerGlowRef.current.material as THREE.MeshBasicMaterial).opacity = appear * 0.3
+      
+      fragmentsRef.current.visible = false
+    }
+    // Phase 3: Egg fully formed, pulsing with energy
+    else if (p < 0.22) {
+      shellRef.current.visible = true
+      const pulse = 1 + Math.sin(t * 3) * 0.05
+      shellRef.current.scale.setScalar(1.2 * pulse)
+      ;(shellRef.current.material as THREE.MeshStandardMaterial).opacity = 0.8
+      
+      // Inner glow intensifies
+      const energyBuild = (p - 0.14) / 0.08
+      innerGlowRef.current.scale.setScalar(1.5 + energyBuild * 0.5)
+      ;(innerGlowRef.current.material as THREE.MeshBasicMaterial).opacity = 0.3 + energyBuild * 0.4
+      
+      fragmentsRef.current.visible = false
+    }
+    // Phase 4: Cracks — shell breaks, fragments drift
+    else if (p < 0.30) {
+      const crackProgress = (p - 0.22) / 0.08
+      shellRef.current.visible = true
+      shellRef.current.scale.setScalar(1.2 * (1 - crackProgress * 0.3))
+      ;(shellRef.current.material as THREE.MeshStandardMaterial).opacity = 0.8 * (1 - crackProgress)
+      
+      // Fragments appear and drift
+      fragmentsRef.current.visible = true
+      fragmentsRef.current.children.forEach((child, i) => {
+        const frag = fragments[i]
+        const dist = crackProgress * 3
+        child.position.copy(frag.dir).multiplyScalar(1.2 + dist)
+        child.rotation.x = t * frag.rotSpeed * crackProgress
+        child.rotation.y = t * frag.rotSpeed * 0.7 * crackProgress
+        child.scale.setScalar(frag.scale * (1 - crackProgress * 0.5))
+        ;(child as THREE.Mesh).material = (child as THREE.Mesh).material as THREE.MeshStandardMaterial
+        const mat = ((child as THREE.Mesh).material as THREE.MeshStandardMaterial)
+        mat.opacity = 1 - crackProgress
+      })
+      
+      // Inner glow surges
+      innerGlowRef.current.scale.setScalar(2 + crackProgress * 2)
+      ;(innerGlowRef.current.material as THREE.MeshBasicMaterial).opacity = 0.7 + crackProgress * 0.3
+    }
+    // Phase 5+: After bang, egg is gone
+    else {
+      shellRef.current.visible = false
+      fragmentsRef.current.visible = false
+      
+      // Inner glow flash then fade
+      if (p < 0.35) {
+        const flash = (p - 0.30) / 0.05
+        innerGlowRef.current.scale.setScalar(4 + flash * 8)
+        ;(innerGlowRef.current.material as THREE.MeshBasicMaterial).opacity = 1 - flash
+      } else {
+        innerGlowRef.current.scale.setScalar(0)
+      }
+    }
+  })
+
+  return (
+    <group>
+      {/* The egg shell */}
+      <mesh ref={shellRef}>
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshStandardMaterial
+          color="#e0e8f0"
+          transparent
+          opacity={0}
+          roughness={0.3}
+          metalness={0.1}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      
+      {/* Inner glow */}
+      <mesh ref={innerGlowRef}>
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshBasicMaterial color="#00D4FF" transparent opacity={0} toneMapped={false} />
+      </mesh>
+      
+      {/* Shell fragments */}
+      <group ref={fragmentsRef}>
+        {fragments.map((frag, i) => (
+          <mesh key={i} position={frag.dir.clone().multiplyScalar(1.2)}>
+            <boxGeometry args={[0.4, 0.3, 0.08]} />
+            <meshStandardMaterial
+              color="#c0d0e0"
+              transparent
+              opacity={1}
+              roughness={0.4}
+              metalness={0.2}
+            />
+          </mesh>
+        ))}
+      </group>
+    </group>
+  )
+}
+
+// ─── Explosion Particles ───────────────────────────────
+function ExplosionParticles({ count = 1500 }: { count?: number }) {
   const meshRef = useRef<THREE.InstancedMesh>(null!)
   const dummy = useMemo(() => new THREE.Object3D(), [])
   
@@ -22,20 +174,16 @@ function ExplosionParticles({ count = 2000 }: { count?: number }) {
     for (let i = 0; i < count; i++) {
       const theta = Math.random() * Math.PI * 2
       const phi = Math.acos(2 * Math.random() - 1)
-      const speed = 0.5 + Math.random() * 2.5
+      const speed = 0.3 + Math.random() * 2
       arr.push({
-        // Direction from center
         dx: Math.sin(phi) * Math.cos(theta) * speed,
         dy: Math.sin(phi) * Math.sin(theta) * speed,
         dz: Math.cos(phi) * speed,
-        // Final orbit position (pulled back toward center)
-        orbitRadius: 2 + Math.random() * 6,
+        orbitRadius: 1.5 + Math.random() * 6,
         orbitAngle: Math.random() * Math.PI * 2,
-        orbitTilt: (Math.random() - 0.5) * 0.8,
-        orbitSpeed: 0.1 + Math.random() * 0.3,
-        // Size variation
-        scale: 0.01 + Math.random() * 0.03,
-        // Color variation
+        orbitTilt: (Math.random() - 0.5) * 0.6,
+        orbitSpeed: 0.08 + Math.random() * 0.2,
+        scale: 0.008 + Math.random() * 0.025,
         colorIdx: Math.floor(Math.random() * 4),
       })
     }
@@ -49,12 +197,11 @@ function ExplosionParticles({ count = 2000 }: { count?: number }) {
     new THREE.Color('#FFD700'),
   ], [])
 
-  // Set instance colors once
   useEffect(() => {
     if (!meshRef.current) return
     const colorArray = new Float32Array(count * 3)
-    particles.forEach((p, i) => {
-      const c = colors[p.colorIdx]
+    particles.forEach((pt, i) => {
+      const c = colors[pt.colorIdx]
       colorArray[i * 3] = c.r
       colorArray[i * 3 + 1] = c.g
       colorArray[i * 3 + 2] = c.b
@@ -67,60 +214,54 @@ function ExplosionParticles({ count = 2000 }: { count?: number }) {
     const t = clock.getElapsedTime()
     const p = scrollState.progress
 
-    particles.forEach((particle, i) => {
-      if (p < 0.05) {
-        // Pre-bang: everything at center, invisible
+    particles.forEach((pt, i) => {
+      // Before the bang: invisible
+      if (p < 0.30) {
         dummy.position.set(0, 0, 0)
         dummy.scale.setScalar(0)
-      } else if (p < 0.2) {
-        // Explosion phase: particles fly outward
-        const explosionProgress = (p - 0.05) / 0.15
-        const ease = 1 - Math.pow(1 - explosionProgress, 3) // ease out
-        const dist = ease * 12
-        dummy.position.set(
-          particle.dx * dist,
-          particle.dy * dist,
-          particle.dz * dist
-        )
-        dummy.scale.setScalar(particle.scale * Math.min(1, explosionProgress * 3))
-      } else if (p < 0.35) {
-        // Nebula formation: particles slow and start swirling
-        const nebulaProgress = (p - 0.2) / 0.15
-        const maxDist = 12
-        const targetOrbit = particle.orbitRadius
-        const currentDist = maxDist - (maxDist - targetOrbit) * nebulaProgress
+      }
+      // Explosion: fly outward
+      else if (p < 0.42) {
+        const ep = (p - 0.30) / 0.12
+        const ease = 1 - Math.pow(1 - ep, 3)
+        const dist = ease * 10
+        dummy.position.set(pt.dx * dist, pt.dy * dist, pt.dz * dist)
+        dummy.scale.setScalar(pt.scale * Math.min(1, ep * 4))
+      }
+      // Nebula: coalesce into orbits
+      else if (p < 0.55) {
+        const np = (p - 0.42) / 0.13
+        const maxDist = 10
+        const targetR = pt.orbitRadius
+        const curDist = maxDist - (maxDist - targetR) * np
         
-        // Blend from explosion direction to orbital motion
-        const explodeX = particle.dx * maxDist
-        const explodeY = particle.dy * maxDist
-        const explodeZ = particle.dz * maxDist
+        const expX = pt.dx * maxDist
+        const expY = pt.dy * maxDist
+        const expZ = pt.dz * maxDist
         
-        const angle = particle.orbitAngle + t * particle.orbitSpeed * nebulaProgress
-        const orbitX = Math.cos(angle) * currentDist
-        const orbitY = Math.sin(angle) * currentDist * 0.4 + particle.orbitTilt * currentDist
-        const orbitZ = Math.sin(angle + particle.orbitTilt) * currentDist * 0.6
+        const angle = pt.orbitAngle + t * pt.orbitSpeed * np
+        const orbX = Math.cos(angle) * curDist
+        const orbY = Math.sin(angle) * curDist * 0.3 + pt.orbitTilt * curDist
+        const orbZ = Math.sin(angle + pt.orbitTilt) * curDist * 0.5
         
         dummy.position.set(
-          THREE.MathUtils.lerp(explodeX, orbitX, nebulaProgress),
-          THREE.MathUtils.lerp(explodeY, orbitY, nebulaProgress),
-          THREE.MathUtils.lerp(explodeZ, orbitZ, nebulaProgress)
+          THREE.MathUtils.lerp(expX, orbX, np),
+          THREE.MathUtils.lerp(expY, orbY, np),
+          THREE.MathUtils.lerp(expZ, orbZ, np)
         )
-        dummy.scale.setScalar(particle.scale)
-      } else {
-        // Orbiting phase: organized solar system
-        const orbitProgress = Math.min(1, (p - 0.35) / 0.3)
-        const angle = particle.orbitAngle + t * particle.orbitSpeed
-        const r = particle.orbitRadius * (1 - orbitProgress * 0.3) // tighten slightly
-        
+        dummy.scale.setScalar(pt.scale)
+      }
+      // Stable orbit
+      else {
+        const angle = pt.orbitAngle + t * pt.orbitSpeed
+        const r = pt.orbitRadius
         dummy.position.set(
           Math.cos(angle) * r,
-          Math.sin(angle) * r * 0.3 + particle.orbitTilt * r * 0.3,
-          Math.sin(angle + particle.orbitTilt) * r * 0.5
+          Math.sin(angle) * r * 0.3 + pt.orbitTilt * r * 0.2,
+          Math.sin(angle + pt.orbitTilt) * r * 0.5
         )
-        
-        // Fade out some particles as system forms
-        const fadeOut = p > 0.8 ? Math.max(0, 1 - (p - 0.8) / 0.2) : 1
-        dummy.scale.setScalar(particle.scale * fadeOut)
+        const fadeOut = p > 0.85 ? Math.max(0.2, 1 - (p - 0.85) / 0.15) : 1
+        dummy.scale.setScalar(pt.scale * fadeOut)
       }
       
       dummy.updateMatrix()
@@ -138,9 +279,9 @@ function ExplosionParticles({ count = 2000 }: { count?: number }) {
   )
 }
 
-// ─── Central Star (the viewer's brand) ─────────────────
+// ─── Central Star ──────────────────────────────────────
 function CentralStar() {
-  const meshRef = useRef<THREE.Mesh>(null!)
+  const coreRef = useRef<THREE.Mesh>(null!)
   const glowRef = useRef<THREE.Mesh>(null!)
   const lightRef = useRef<THREE.PointLight>(null!)
 
@@ -148,54 +289,40 @@ function CentralStar() {
     const t = clock.getElapsedTime()
     const p = scrollState.progress
 
-    if (p < 0.05) {
-      // Pre-bang: tiny intense point
-      const preScale = 0.1 + Math.sin(t * 2) * 0.02
-      meshRef.current.scale.setScalar(preScale)
-      glowRef.current.scale.setScalar(preScale * 3)
-      lightRef.current.intensity = 0.5
-    } else if (p < 0.2) {
-      // Explosion: flash then grow
-      const ep = (p - 0.05) / 0.15
-      const flash = ep < 0.3 ? (ep / 0.3) * 3 : 1
-      meshRef.current.scale.setScalar(0.3 * flash)
-      glowRef.current.scale.setScalar(2 + ep * 4)
-      lightRef.current.intensity = 2 + flash * 5
-    } else if (p < 0.4) {
-      // Star forming
-      const formProgress = (p - 0.2) / 0.2
-      const pulse = 1 + Math.sin(t * 3) * 0.1
-      meshRef.current.scale.setScalar((0.3 + formProgress * 0.4) * pulse)
-      glowRef.current.scale.setScalar(3 + formProgress * 2)
-      lightRef.current.intensity = 3 + formProgress * 2
-    } else {
-      // Stable star
-      const pulse = 1 + Math.sin(t * 2) * 0.05
-      meshRef.current.scale.setScalar(0.7 * pulse)
-      glowRef.current.scale.setScalar(5 + Math.sin(t) * 0.5)
-      lightRef.current.intensity = 5
+    // Only visible after the bang
+    if (p < 0.35) {
+      coreRef.current.scale.setScalar(0)
+      glowRef.current.scale.setScalar(0)
+      lightRef.current.intensity = 0
+      return
     }
+    
+    // Star forming
+    const formP = Math.min(1, (p - 0.35) / 0.15)
+    const pulse = 1 + Math.sin(t * 2.5) * 0.06
+    const size = formP * 0.6 * pulse
+    
+    coreRef.current.scale.setScalar(size)
+    glowRef.current.scale.setScalar(size * 6)
+    lightRef.current.intensity = formP * 5
   })
 
   return (
     <group>
-      {/* Core */}
-      <mesh ref={meshRef}>
+      <mesh ref={coreRef}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshBasicMaterial color="#ffffff" toneMapped={false} />
       </mesh>
-      {/* Glow */}
       <mesh ref={glowRef}>
         <sphereGeometry args={[1, 32, 32]} />
-        <meshBasicMaterial color="#00D4FF" transparent opacity={0.15} toneMapped={false} />
+        <meshBasicMaterial color="#00D4FF" transparent opacity={0.12} toneMapped={false} />
       </mesh>
-      {/* Light */}
-      <pointLight ref={lightRef} color="#00D4FF" intensity={3} distance={30} />
+      <pointLight ref={lightRef} color="#00D4FF" intensity={0} distance={30} />
     </group>
   )
 }
 
-// ─── Orbit Ring ────────────────────────────────────────
+// ─── Orbit Rings ───────────────────────────────────────
 function OrbitRing({ radius, color, tilt, activateAt }: {
   radius: number; color: string; tilt: number; activateAt: number
 }) {
@@ -203,15 +330,14 @@ function OrbitRing({ radius, color, tilt, activateAt }: {
   
   useFrame(() => {
     const p = scrollState.progress
-    const visibility = Math.max(0, Math.min(1, (p - activateAt) / 0.08))
-    ref.current.material = ref.current.material as THREE.MeshBasicMaterial
-    ;(ref.current.material as THREE.MeshBasicMaterial).opacity = visibility * 0.3
-    ref.current.scale.setScalar(visibility)
+    const vis = Math.max(0, Math.min(1, (p - activateAt) / 0.06))
+    ;(ref.current.material as THREE.MeshBasicMaterial).opacity = vis * 0.25
+    ref.current.scale.setScalar(vis)
   })
 
   return (
     <mesh ref={ref} rotation={[Math.PI / 2 + tilt, 0, 0]}>
-      <torusGeometry args={[radius, 0.015, 16, 100]} />
+      <torusGeometry args={[radius, 0.012, 16, 120]} />
       <meshBasicMaterial color={color} transparent opacity={0} toneMapped={false} />
     </mesh>
   )
@@ -228,50 +354,27 @@ function ServicePlanet({ radius, color, speed, label, activateAt, startAngle, ti
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
     const p = scrollState.progress
-    const visibility = Math.max(0, Math.min(1, (p - activateAt) / 0.1))
+    const vis = Math.max(0, Math.min(1, (p - activateAt) / 0.08))
     
-    if (visibility <= 0) {
-      groupRef.current.visible = false
-      return
-    }
-    
+    if (vis <= 0) { groupRef.current.visible = false; return }
     groupRef.current.visible = true
+    
     const angle = startAngle + t * speed
-    const x = Math.cos(angle) * radius
-    const z = Math.sin(angle) * radius
-    const y = Math.sin(angle) * tilt * radius * 0.3
-    
-    groupRef.current.position.set(x, y, z)
-    
-    // Scale in
-    const scale = visibility * (0.15 + Math.sin(t * 2 + startAngle) * 0.02)
-    meshRef.current.scale.setScalar(scale)
+    groupRef.current.position.set(
+      Math.cos(angle) * radius,
+      Math.sin(angle) * tilt * radius * 0.3,
+      Math.sin(angle) * radius
+    )
+    meshRef.current.scale.setScalar(vis * (0.12 + Math.sin(t * 2 + startAngle) * 0.015))
   })
 
   return (
     <group ref={groupRef}>
       <mesh ref={meshRef}>
         <sphereGeometry args={[1, 16, 16]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={0.5}
-          toneMapped={false}
-        />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} toneMapped={false} />
       </mesh>
-      <pointLight color={color} intensity={1} distance={5} />
-      <Billboard>
-        <Text
-          fontSize={0.15}
-          color="white"
-          anchorY="bottom"
-          position={[0, 0.3, 0]}
-          fillOpacity={0.7}
-          font="/fonts/inter.woff"
-        >
-          {label}
-        </Text>
-      </Billboard>
+      <pointLight color={color} intensity={0.8} distance={4} />
     </group>
   )
 }
@@ -282,112 +385,190 @@ function CameraController() {
   
   useFrame(() => {
     const p = scrollState.progress
+    let target: THREE.Vector3
     
-    if (p < 0.05) {
-      // Close up on the singularity
-      camera.position.lerp(new THREE.Vector3(0, 0, 5), 0.05)
-    } else if (p < 0.2) {
+    if (p < 0.14) {
+      // Close on the egg forming
+      target = new THREE.Vector3(0, 0, 4)
+    } else if (p < 0.22) {
+      // Slightly pull back as egg pulses
+      target = new THREE.Vector3(0, 0.3, 5)
+    } else if (p < 0.30) {
+      // Slight shake/pull as cracks form
+      const shake = (p - 0.22) / 0.08
+      target = new THREE.Vector3(
+        Math.sin(p * 80) * shake * 0.15,
+        0.3 + shake * 0.3,
+        5 + shake * 1
+      )
+    } else if (p < 0.42) {
       // Pull back during explosion
-      const ep = (p - 0.05) / 0.15
-      camera.position.lerp(new THREE.Vector3(0, 2 * ep, 5 + ep * 10), 0.05)
-    } else if (p < 0.5) {
-      // Orbit around the forming system
-      const orbitP = (p - 0.2) / 0.3
-      camera.position.lerp(new THREE.Vector3(
-        Math.sin(orbitP * 0.5) * 3,
-        3 + orbitP * 2,
-        12 + orbitP * 3
-      ), 0.05)
-    } else if (p < 0.8) {
-      // Pull further back to see full system
-      const viewP = (p - 0.5) / 0.3
-      camera.position.lerp(new THREE.Vector3(
-        Math.sin(viewP * 0.3) * 2,
-        5 + viewP * 3,
-        15 + viewP * 5
-      ), 0.03)
+      const ep = (p - 0.30) / 0.12
+      target = new THREE.Vector3(0, 1 + ep * 2, 6 + ep * 8)
+    } else if (p < 0.55) {
+      // Orbit the nebula
+      const np = (p - 0.42) / 0.13
+      target = new THREE.Vector3(
+        Math.sin(np * 0.8) * 3,
+        3 + np * 2,
+        14 + np * 2
+      )
+    } else if (p < 0.78) {
+      // Slowly pull back to see solar system form
+      const sp = (p - 0.55) / 0.23
+      target = new THREE.Vector3(
+        Math.sin(sp * 0.5) * 2,
+        5 + sp * 2,
+        16 + sp * 4
+      )
     } else {
-      // Final: epic wide shot
-      camera.position.lerp(new THREE.Vector3(0, 8, 22), 0.03)
+      // Final wide shot
+      target = new THREE.Vector3(0, 7, 22)
     }
     
+    camera.position.lerp(target, 0.04)
     camera.lookAt(0, 0, 0)
   })
   
   return null
 }
 
-// ─── Scene ─────────────────────────────────────────────
-function Scene() {
-  const serviceGroups = [
-    // Orbit 1: Precision Performance (PPC)
-    { radius: 3, color: '#00D4FF', speed: 0.2, tilt: 0.1, activateAt: 0.3, services: ['Google Ads', 'Amazon Ads', 'Bing Ads'] },
-    // Orbit 2: Social Conversion Engine
-    { radius: 4.5, color: '#FF2D87', speed: 0.15, tilt: -0.15, activateAt: 0.4, services: ['Meta Ads', 'Pinterest', 'TikTok'] },
-    // Orbit 3: Organic Opportunity Lab
-    { radius: 6, color: '#00E676', speed: 0.12, tilt: 0.2, activateAt: 0.5, services: ['E-com SEO', 'Local SEO', 'AI-SEO'] },
-    // Orbit 4: Conversion-Led Design
-    { radius: 7.5, color: '#FFD700', speed: 0.1, tilt: -0.1, activateAt: 0.6, services: ['Landing Pages', 'Ad Creative', 'Video'] },
-  ]
+// ─── Background Color Controller ───────────────────────
+function BackgroundController() {
+  const { scene } = useThree()
+  const whiteColor = useMemo(() => new THREE.Color('#f5f5f5'), [])
+  const darkColor = useMemo(() => new THREE.Color('#000005'), [])
+  
+  useFrame(() => {
+    const p = scrollState.progress
+    if (p < 0.28) {
+      // White/light background
+      scene.background = whiteColor.clone()
+    } else if (p < 0.38) {
+      // Transition to dark during bang
+      const t = (p - 0.28) / 0.10
+      scene.background = whiteColor.clone().lerp(darkColor, t)
+    } else {
+      scene.background = darkColor.clone()
+    }
+  })
+  
+  return null
+}
 
+// ─── Stars (only visible in dark phase) ────────────────
+function ConditionalStars() {
+  const starsRef = useRef<THREE.Group>(null!)
+  
+  useFrame(() => {
+    const p = scrollState.progress
+    if (starsRef.current) {
+      const vis = Math.max(0, Math.min(1, (p - 0.35) / 0.1))
+      starsRef.current.children.forEach((child) => {
+        ;(child as THREE.Points).material = (child as THREE.Points).material as THREE.PointsMaterial
+        ;((child as THREE.Points).material as THREE.PointsMaterial).opacity = vis
+      })
+    }
+  })
+  
+  return (
+    <group ref={starsRef}>
+      <Stars radius={100} depth={50} count={3000} factor={3} saturation={0.5} fade speed={0.5} />
+    </group>
+  )
+}
+
+// ─── Lighting that adapts to phase ─────────────────────
+function AdaptiveLighting() {
+  const ambientRef = useRef<THREE.AmbientLight>(null!)
+  const dirRef = useRef<THREE.DirectionalLight>(null!)
+  
+  useFrame(() => {
+    const p = scrollState.progress
+    if (p < 0.30) {
+      // Bright lighting for white phase
+      ambientRef.current.intensity = 0.8
+      dirRef.current.intensity = 1.2
+      dirRef.current.color.set('#ffffff')
+    } else if (p < 0.40) {
+      const t = (p - 0.30) / 0.10
+      ambientRef.current.intensity = 0.8 - t * 0.7
+      dirRef.current.intensity = 1.2 - t * 1.0
+    } else {
+      ambientRef.current.intensity = 0.1
+      dirRef.current.intensity = 0.2
+    }
+  })
+  
   return (
     <>
-      {/* Ambient environment */}
-      <ambientLight intensity={0.1} />
-      <Stars radius={100} depth={50} count={3000} factor={3} saturation={0.5} fade speed={0.5} />
-      
-      {/* Camera */}
-      <CameraController />
-      
-      {/* Central star */}
-      <CentralStar />
-      
-      {/* Explosion particles */}
-      <ExplosionParticles count={1500} />
-      
-      {/* Orbital rings */}
-      {serviceGroups.map((group, gi) => (
-        <OrbitRing
-          key={`ring-${gi}`}
-          radius={group.radius}
-          color={group.color}
-          tilt={group.tilt}
-          activateAt={group.activateAt}
-        />
-      ))}
-      
-      {/* Service planets */}
-      {serviceGroups.map((group, gi) =>
-        group.services.map((svc, si) => (
-          <ServicePlanet
-            key={`planet-${gi}-${si}`}
-            radius={group.radius}
-            color={group.color}
-            speed={group.speed}
-            label={svc}
-            activateAt={group.activateAt + si * 0.03}
-            startAngle={(si / group.services.length) * Math.PI * 2}
-            tilt={group.tilt}
-          />
-        ))
-      )}
-      
-      {/* Fog for depth */}
-      <fog attach="fog" args={['#000005', 20, 60]} />
+      <ambientLight ref={ambientRef} intensity={0.8} />
+      <directionalLight ref={dirRef} position={[5, 5, 5]} intensity={1.2} />
     </>
   )
 }
 
-// ─── Stage text overlays ───────────────────────────────
+// ─── Full 3D Scene ─────────────────────────────────────
+function Scene() {
+  const serviceGroups = [
+    { radius: 3, color: '#00D4FF', speed: 0.18, tilt: 0.1, activateAt: 0.50, services: ['Google Ads', 'Amazon Ads', 'Bing Ads'] },
+    { radius: 4.5, color: '#FF2D87', speed: 0.14, tilt: -0.15, activateAt: 0.58, services: ['Meta Ads', 'Pinterest', 'TikTok'] },
+    { radius: 6, color: '#00E676', speed: 0.11, tilt: 0.18, activateAt: 0.66, services: ['E-com SEO', 'Local SEO', 'AI-SEO'] },
+    { radius: 7.5, color: '#FFD700', speed: 0.09, tilt: -0.1, activateAt: 0.72, services: ['Landing Pages', 'Ad Creative', 'Video'] },
+  ]
+
+  return (
+    <>
+      <BackgroundController />
+      <AdaptiveLighting />
+      <CameraController />
+      <ConditionalStars />
+      
+      {/* The cosmic egg (pre-bang) */}
+      <CosmicEgg />
+      
+      {/* Explosion particles (post-bang) */}
+      <ExplosionParticles count={1500} />
+      
+      {/* Central star (post-bang) */}
+      <CentralStar />
+      
+      {/* Orbital rings */}
+      {serviceGroups.map((g, i) => (
+        <OrbitRing key={`ring-${i}`} radius={g.radius} color={g.color} tilt={g.tilt} activateAt={g.activateAt} />
+      ))}
+      
+      {/* Service planets */}
+      {serviceGroups.map((g, gi) =>
+        g.services.map((svc, si) => (
+          <ServicePlanet
+            key={`p-${gi}-${si}`}
+            radius={g.radius} color={g.color} speed={g.speed} label={svc}
+            activateAt={g.activateAt + si * 0.02}
+            startAngle={(si / g.services.length) * Math.PI * 2}
+            tilt={g.tilt}
+          />
+        ))
+      )}
+      
+      <fog attach="fog" args={['#000005', 25, 60]} />
+    </>
+  )
+}
+
+// ─── Stage text ────────────────────────────────────────
 const STAGES = [
-  { title: 'Every empire starts the same way.', subtitle: 'A single point of potential. Infinite energy. Waiting.', progress: [0, 0.08] },
-  { title: 'The Big Bang.', subtitle: 'Your ambition meets the digital universe. Everything begins.', progress: [0.08, 0.22] },
-  { title: 'Chaos finds form.', subtitle: 'From scattered energy, strategy emerges. The right forces attract.', progress: [0.22, 0.35] },
-  { title: 'Precision ignites.', subtitle: 'Google Ads · Amazon Ads · Bing Ads — the first orbit locks in.', progress: [0.35, 0.45] },
-  { title: 'Social amplifies.', subtitle: 'Meta · Pinterest · TikTok — your gravity pulls audiences in.', progress: [0.45, 0.55] },
-  { title: 'Organic compounds.', subtitle: 'SEO builds mass. Authority. Unstoppable momentum.', progress: [0.55, 0.65] },
-  { title: 'Design converts.', subtitle: 'Every touchpoint, a conversion event. Beauty with purpose.', progress: [0.65, 0.78] },
-  { title: 'Your universe, built.', subtitle: '138+ brands have built theirs. This is how empires grow.', progress: [0.78, 1.0] },
+  { title: '', subtitle: '', progress: [0, 0.06] },
+  { title: 'Something is forming.', subtitle: '', progress: [0.06, 0.14] },
+  { title: 'Pure potential.', subtitle: 'Waiting to be unleashed.', progress: [0.14, 0.22] },
+  { title: 'The old limits shatter.', subtitle: 'Everything you thought you knew — breaking apart.', progress: [0.22, 0.30] },
+  { title: 'The Bang.', subtitle: 'Your universe is born.', progress: [0.30, 0.42] },
+  { title: 'From chaos, form.', subtitle: 'Strategy emerges. The right forces attract.', progress: [0.42, 0.50] },
+  { title: 'Precision ignites.', subtitle: 'Google Ads · Amazon Ads · Bing Ads', progress: [0.50, 0.58] },
+  { title: 'Social amplifies.', subtitle: 'Meta · Pinterest · TikTok — your gravity pulls audiences in.', progress: [0.58, 0.66] },
+  { title: 'Organic compounds.', subtitle: 'SEO builds mass. Authority. Momentum.', progress: [0.66, 0.72] },
+  { title: 'Design converts.', subtitle: 'Every touchpoint engineered for revenue.', progress: [0.72, 0.78] },
+  { title: 'Your universe, built.', subtitle: '138+ brands built theirs. This is how empires grow.', progress: [0.78, 1.0] },
 ]
 
 // ─── Main Component ────────────────────────────────────
@@ -397,6 +578,7 @@ export default function BigBangJourney() {
   const [stageOpacity, setStageOpacity] = useState(1)
   const [showStats, setShowStats] = useState(false)
   const [statValues, setStatValues] = useState({ brands: 0, roas: 0, revenue: 0, referral: 0 })
+  const [bgPhase, setBgPhase] = useState<'light' | 'dark'>('light')
   const statsAnimated = useRef(false)
 
   const animateStats = useCallback(() => {
@@ -432,10 +614,12 @@ export default function BigBangJourney() {
       onUpdate: (self) => {
         scrollState.progress = self.progress
 
-        // Determine active stage
-        for (let i = 0; i < STAGES.length; i++) {
-          const [start, end] = STAGES[i].progress
-          if (self.progress >= start && self.progress < end) {
+        // Background phase
+        setBgPhase(self.progress < 0.30 ? 'light' : 'dark')
+
+        // Active stage
+        for (let i = STAGES.length - 1; i >= 0; i--) {
+          if (self.progress >= STAGES[i].progress[0]) {
             setActiveStage((prev) => {
               if (prev !== i) {
                 setStageOpacity(0)
@@ -447,7 +631,6 @@ export default function BigBangJourney() {
           }
         }
 
-        // Show stats at end
         if (self.progress > 0.82) {
           setShowStats(true)
           animateStats()
@@ -458,38 +641,49 @@ export default function BigBangJourney() {
     return () => st.kill()
   }, [animateStats])
 
+  // Text color depends on bg phase
+  const textColor = bgPhase === 'light' ? 'text-gray-900' : 'text-white'
+  const textSubColor = bgPhase === 'light' ? 'text-gray-500' : 'text-white/50'
+  const accentColor = bgPhase === 'light' ? 'text-sky-600' : 'text-cyan-400/70'
+
   return (
-    <div ref={containerRef} className="relative" style={{ height: '700vh' }}>
-      <div className="sticky top-0 h-screen w-full overflow-hidden bg-black">
+    <div ref={containerRef} className="relative" style={{ height: '800vh' }}>
+      <div className="sticky top-0 h-screen w-full overflow-hidden">
         {/* Three.js Canvas */}
         <Canvas
-          camera={{ position: [0, 0, 5], fov: 60, near: 0.1, far: 200 }}
+          camera={{ position: [0, 0, 4], fov: 60, near: 0.1, far: 200 }}
           className="absolute inset-0"
           gl={{ antialias: true, alpha: false }}
-          dpr={[1, 2]}
+          dpr={[1, 1.5]}
         >
           <Scene />
         </Canvas>
 
         {/* Stage text overlay */}
-        <div
-          className="absolute left-8 md:left-16 lg:left-24 top-1/2 -translate-y-1/2 z-20 max-w-lg pointer-events-none"
-          style={{ opacity: stageOpacity, transition: 'opacity 0.4s ease' }}
-        >
-          <div className="space-y-4">
-            <p className="text-[10px] tracking-[0.4em] uppercase text-cyan-400/70 font-mono">
-              {activeStage < 3 ? 'The Origin' : activeStage < 7 ? `Phase ${activeStage - 2} of 4` : 'The Result'}
-            </p>
-            <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
-              {STAGES[activeStage].title}
-            </h2>
-            <p className="text-base md:text-lg text-white/50 leading-relaxed">
-              {STAGES[activeStage].subtitle}
-            </p>
+        {STAGES[activeStage].title && (
+          <div
+            className="absolute left-8 md:left-16 lg:left-24 top-1/2 -translate-y-1/2 z-20 max-w-lg pointer-events-none"
+            style={{ opacity: stageOpacity, transition: 'opacity 0.4s ease' }}
+          >
+            <div className="space-y-4">
+              {activeStage >= 6 && activeStage <= 9 && (
+                <p className={`text-[10px] tracking-[0.4em] uppercase font-mono ${accentColor}`}>
+                  Phase {activeStage - 5} of 4
+                </p>
+              )}
+              <h2 className={`text-3xl md:text-5xl lg:text-6xl font-bold leading-tight ${textColor}`}>
+                {STAGES[activeStage].title}
+              </h2>
+              {STAGES[activeStage].subtitle && (
+                <p className={`text-base md:text-lg leading-relaxed ${textSubColor}`}>
+                  {STAGES[activeStage].subtitle}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Stats overlay - final stage */}
+        {/* Stats overlay */}
         {showStats && (
           <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex flex-wrap justify-center gap-10 md:gap-16 pointer-events-none"
             style={{ animation: 'fadeInUp 1s ease forwards' }}>
@@ -507,22 +701,23 @@ export default function BigBangJourney() {
           </div>
         )}
 
-        {/* Progress indicator */}
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 h-40 w-[2px] bg-white/5 rounded-full pointer-events-none">
-          {STAGES.map((_, i) => (
+        {/* Progress dots */}
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 pointer-events-none">
+          {STAGES.filter(s => s.title).map((_, i) => (
             <div
               key={i}
-              className={`absolute w-1.5 h-1.5 rounded-full -left-[2px] transition-all duration-500 ${
-                i <= activeStage ? 'bg-cyan-400' : 'bg-white/15'
+              className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${
+                i <= activeStage ? (bgPhase === 'light' ? 'bg-sky-600' : 'bg-cyan-400') : (bgPhase === 'light' ? 'bg-gray-300' : 'bg-white/15')
               }`}
-              style={{ top: `${(i / (STAGES.length - 1)) * 100}%` }}
             />
           ))}
         </div>
 
         {/* Scroll hint */}
         {activeStage < STAGES.length - 1 && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 text-white/20 text-[10px] tracking-[0.3em] uppercase font-mono pointer-events-none">
+          <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 z-20 text-[10px] tracking-[0.3em] uppercase font-mono pointer-events-none ${
+            bgPhase === 'light' ? 'text-gray-400' : 'text-white/20'
+          }`}>
             Scroll to explore
           </div>
         )}
