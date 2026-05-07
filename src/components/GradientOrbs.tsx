@@ -38,11 +38,17 @@ export default function GradientOrbs() {
     function animate() {
       ctx!.clearRect(0, 0, width, height);
 
+      // Only render orbs when background is dark (post-BigBang)
+      const phase = document.documentElement.getAttribute('data-bg-phase');
+      if (phase === 'light') {
+        animId = requestAnimationFrame(animate);
+        return;
+      }
+
       orbs.forEach(orb => {
         orb.x += orb.vx;
         orb.y += orb.vy;
 
-        // Bounce off edges
         if (orb.x < -orb.radius) orb.x = width + orb.radius;
         if (orb.x > width + orb.radius) orb.x = -orb.radius;
         if (orb.y < -orb.radius) orb.y = height + orb.radius;

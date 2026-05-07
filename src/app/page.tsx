@@ -11,8 +11,8 @@ import dynamic from 'next/dynamic'
 const BigBangJourney = dynamic(() => import('@/components/BigBangJourney'), {
   ssr: false,
   loading: () => (
-    <div className="h-screen bg-black flex items-center justify-center">
-      <div className="text-white/20 text-sm tracking-widest uppercase font-mono">Loading experience...</div>
+    <div className="h-screen bg-white flex items-center justify-center">
+      {/* White screen — matches the journey's opening */}
     </div>
   ),
 })
@@ -293,35 +293,7 @@ function CTASection() {
 export default function Home() {
   return (
     <main>
-      {/* Hero - minimal, just logo + tagline before the journey */}
-      <section className="relative h-screen flex flex-col items-center justify-center text-center px-8">
-        {/* Background glow */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-[400px] h-[400px] rounded-full bg-sky-500/5 blur-[100px]" />
-        </div>
-
-        <div className="relative z-10 space-y-6">
-          <p className="label animate-fade-in" style={{ animationDelay: '0.5s' }}>Digital Marketing Agency</p>
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white animate-fade-up" style={{ animationDelay: '0.7s' }}>
-            Excellence In<br />
-            <span className="gradient-text">Digital Strategy</span>
-          </h1>
-          <p className="text-white/40 text-lg max-w-xl mx-auto animate-fade-up" style={{ animationDelay: '0.9s' }}>
-            We combine creativity, AI, data, and tech to help you scale smarter,
-            rank faster, and connect deeper to target audiences.
-          </p>
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3 animate-fade-in" style={{ animationDelay: '1.5s' }}>
-          <span className="text-[10px] tracking-[0.3em] uppercase text-white/30 font-mono">Begin Your Journey</span>
-          <div className="w-5 h-8 rounded-full border border-white/20 flex items-start justify-center p-1">
-            <div className="w-1 h-2 rounded-full bg-sky-400 animate-scroll-dot" />
-          </div>
-        </div>
-      </section>
-
-      {/* The Big Bang — scroll-driven 3D storytelling journey */}
+      {/* The Big Bang — THE homepage opening. No hero before it. */}
       <BigBangJourney />
 
       {/* Trust Marquee */}
