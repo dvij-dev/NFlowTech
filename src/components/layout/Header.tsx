@@ -1,225 +1,194 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Menu, X, ChevronDown } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { mainNav } from '@/data/navigation'
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 
-export default function Header() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
-  const pathname = usePathname()
+const navItems = [
+  {
+    label: "Services",
+    href: "/services",
+    children: [
+      { label: "PPC Marketing", href: "/services/ppc", desc: "Google Ads, Meta Ads, and beyond" },
+      { label: "Social Media", href: "/services/social-media", desc: "Paid social that converts" },
+      { label: "SEO", href: "/services/seo", desc: "Organic growth engine" },
+      { label: "Web Design", href: "/services/web-design", desc: "Conversion-led design" },
+    ],
+  },
+  { label: "Case Studies", href: "/case-studies" },
+  { label: "About", href: "/about" },
+  { label: "Pricing", href: "/pricing" },
+  { label: "Insights", href: "/insights" },
+  { label: "Contact", href: "/contact" },
+];
+
+export function Header() {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+    const onScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
-    setIsOpen(false)
-    setOpenDropdown(null)
-  }, [pathname])
+    setIsMobileOpen(false);
+    setActiveDropdown(null);
+  }, [pathname]);
 
-  // Lock body scroll when mobile menu open
   useEffect(() => {
-    document.body.style.overflow = isOpen ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
-  }, [isOpen])
+    document.body.style.overflow = isMobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [isMobileOpen]);
 
   return (
     <header
       className={cn(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
         isScrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-brand-gray-100'
-          : 'bg-transparent'
+          ? "bg-navy-950/80 backdrop-blur-xl border-b border-white/[0.06] py-3"
+          : "bg-transparent py-5"
       )}
-      role="banner"
     >
-      <div className="section-container">
-        <nav
-          className="flex items-center justify-between h-16 sm:h-20"
-          role="navigation"
-          aria-label="Main navigation"
-        >
-          {/* Logo */}
-          <Link
-            href="/"
-            className="flex items-center gap-2.5 font-bold text-xl text-brand-navy z-50 relative"
-            aria-label="NFlow Tech — Home"
-          >
-            <div className="w-9 h-9 bg-brand-blue rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">NF</span>
-            </div>
-            <span className={cn(
-              'transition-colors duration-300',
-              !isScrolled && !isOpen ? 'text-brand-navy' : 'text-brand-navy'
-            )}>
-              NFLOW
-            </span>
-          </Link>
+      <div className="container-wide flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="relative z-50 flex items-center gap-3 group">
+          <div className="w-10 h-10 rounded-xl bg-gradient-accent flex items-center justify-center font-bold text-white text-sm shadow-glow-teal group-hover:scale-105 transition-transform">
+            NF
+          </div>
+          <span className="font-display text-xl font-bold tracking-tight">
+            NFLOW
+          </span>
+        </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-1">
-            {mainNav.map((item) =>
-              item.children ? (
-                <div
-                  key={item.label}
-                  className="relative group"
-                  onMouseEnter={() => setOpenDropdown(item.label)}
-                  onMouseLeave={() => setOpenDropdown(null)}
-                >
-                  <button
-                    className={cn(
-                      'flex items-center gap-1 px-4 py-2.5 text-body-sm font-medium rounded-lg transition-colors',
-                      pathname.startsWith('/services')
-                        ? 'text-brand-blue'
-                        : 'text-brand-gray-700 hover:text-brand-blue hover:bg-brand-blue/5'
-                    )}
-                    aria-expanded={openDropdown === item.label}
-                    aria-haspopup="true"
-                  >
-                    {item.label}
-                    <ChevronDown className="w-3.5 h-3.5 transition-transform group-hover:rotate-180" />
-                  </button>
-                  <div
-                    className={cn(
-                      'absolute top-full left-0 pt-2 transition-all duration-200',
-                      openDropdown === item.label
-                        ? 'opacity-100 translate-y-0 pointer-events-auto'
-                        : 'opacity-0 -translate-y-2 pointer-events-none'
-                    )}
-                  >
-                    <div className="bg-white rounded-xl shadow-lg border border-brand-gray-100 py-2 min-w-[220px]">
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          className={cn(
-                            'block px-5 py-2.5 text-body-sm transition-colors',
-                            pathname === child.href
-                              ? 'text-brand-blue bg-brand-blue/5 font-medium'
-                              : 'text-brand-gray-700 hover:text-brand-blue hover:bg-brand-blue/5'
-                          )}
-                        >
+        {/* Desktop Nav */}
+        <nav className="hidden lg:flex items-center gap-1">
+          {navItems.map((item) => (
+            <div
+              key={item.label}
+              className="relative"
+              onMouseEnter={() => item.children && setActiveDropdown(item.label)}
+              onMouseLeave={() => setActiveDropdown(null)}
+            >
+              <Link
+                href={item.href}
+                className={cn(
+                  "px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
+                  pathname.startsWith(item.href)
+                    ? "text-accent"
+                    : "text-white/70 hover:text-white hover:bg-white/[0.05]"
+                )}
+              >
+                {item.label}
+                {item.children && (
+                  <svg className="inline-block w-3.5 h-3.5 ml-1 opacity-50" viewBox="0 0 12 12" fill="none">
+                    <path d="M3 5L6 8L9 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                )}
+              </Link>
+
+              {/* Dropdown */}
+              {item.children && activeDropdown === item.label && (
+                <div className="absolute top-full left-0 pt-2 w-72">
+                  <div className="glass-card p-2 shadow-card-dark">
+                    {item.children.map((child) => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        className="block px-4 py-3 rounded-xl hover:bg-white/[0.05] transition-colors group"
+                      >
+                        <div className="text-sm font-semibold text-white group-hover:text-accent transition-colors">
                           {child.label}
-                        </Link>
-                      ))}
-                    </div>
+                        </div>
+                        <div className="text-xs text-white/40 mt-0.5">{child.desc}</div>
+                      </Link>
+                    ))}
                   </div>
                 </div>
-              ) : (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    'px-4 py-2.5 text-body-sm font-medium rounded-lg transition-colors',
-                    pathname === item.href
-                      ? 'text-brand-blue'
-                      : 'text-brand-gray-700 hover:text-brand-blue hover:bg-brand-blue/5'
-                  )}
-                >
-                  {item.label}
-                </Link>
-              )
-            )}
-          </div>
-
-          {/* CTA + Mobile Toggle */}
-          <div className="flex items-center gap-3">
-            <Link
-              href="/contact"
-              className="hidden sm:inline-flex btn-primary text-body-sm"
-            >
-              Get Free Audit
-            </Link>
-            <button
-              className="lg:hidden btn p-2.5 text-brand-navy z-50 relative"
-              onClick={() => setIsOpen(!isOpen)}
-              aria-expanded={isOpen}
-              aria-label={isOpen ? 'Close menu' : 'Open menu'}
-            >
-              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
+              )}
+            </div>
+          ))}
         </nav>
+
+        {/* CTA + Mobile Toggle */}
+        <div className="flex items-center gap-4">
+          <Link
+            href="/contact"
+            className="hidden lg:inline-flex items-center gap-2 px-6 py-2.5 bg-accent text-white text-sm font-semibold rounded-full hover:bg-accent-light hover:shadow-glow-teal transition-all duration-300 hover:-translate-y-0.5"
+          >
+            Get Free Audit
+            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
+              <path d="M3 8H13M10 5L13 8L10 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+
+          {/* Mobile Toggle */}
+          <button
+            onClick={() => setIsMobileOpen(!isMobileOpen)}
+            className="lg:hidden relative z-50 w-11 h-11 flex items-center justify-center rounded-xl hover:bg-white/10 transition-colors"
+            aria-label={isMobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMobileOpen}
+          >
+            <div className="w-5 h-4 flex flex-col justify-between">
+              <span className={cn("h-0.5 bg-white rounded-full transition-all duration-300 origin-center", isMobileOpen && "rotate-45 translate-y-[7px]")} />
+              <span className={cn("h-0.5 bg-white rounded-full transition-all duration-300", isMobileOpen && "opacity-0 scale-0")} />
+              <span className={cn("h-0.5 bg-white rounded-full transition-all duration-300 origin-center", isMobileOpen && "-rotate-45 -translate-y-[7px]")} />
+            </div>
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
       <div
         className={cn(
-          'fixed inset-0 bg-white z-40 lg:hidden transition-all duration-300',
-          isOpen
-            ? 'opacity-100 pointer-events-auto'
-            : 'opacity-0 pointer-events-none'
+          "fixed inset-0 bg-navy-950/98 backdrop-blur-2xl z-40 transition-all duration-500 lg:hidden",
+          isMobileOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
         )}
       >
-        <nav className="pt-24 px-6 pb-8 h-full overflow-y-auto" aria-label="Mobile navigation">
-          <div className="space-y-1">
-            {mainNav.map((item) =>
-              item.children ? (
-                <div key={item.label}>
-                  <button
-                    className="flex items-center justify-between w-full px-4 py-3.5 text-lg font-medium text-brand-navy rounded-lg"
-                    onClick={() =>
-                      setOpenDropdown(openDropdown === item.label ? null : item.label)
-                    }
-                    aria-expanded={openDropdown === item.label}
-                  >
-                    {item.label}
-                    <ChevronDown
-                      className={cn(
-                        'w-5 h-5 transition-transform',
-                        openDropdown === item.label && 'rotate-180'
-                      )}
-                    />
-                  </button>
-                  {openDropdown === item.label && (
-                    <div className="ml-4 space-y-1 mb-2">
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          className={cn(
-                            'block px-4 py-2.5 text-body-md rounded-lg transition-colors',
-                            pathname === child.href
-                              ? 'text-brand-blue bg-brand-blue/5 font-medium'
-                              : 'text-brand-gray-600 hover:text-brand-blue'
-                          )}
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
+        <nav className="flex flex-col items-start justify-center h-full px-8 pb-20">
+          {navItems.map((item, i) => (
+            <div key={item.label} className="w-full">
+              <Link
+                href={item.href}
+                onClick={() => setIsMobileOpen(false)}
+                className={cn(
+                  "block py-4 text-3xl font-display font-bold transition-all duration-300",
+                  isMobileOpen ? "translate-x-0 opacity-100" : "translate-x-8 opacity-0",
+                  pathname.startsWith(item.href) ? "text-accent" : "text-white hover:text-accent"
+                )}
+                style={{ transitionDelay: isMobileOpen ? `${i * 60}ms` : "0ms" }}
+              >
+                {item.label}
+              </Link>
+              {item.children && (
+                <div className="pl-4 pb-2">
+                  {item.children.map((child) => (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      onClick={() => setIsMobileOpen(false)}
+                      className="block py-2 text-base text-white/50 hover:text-accent transition-colors"
+                    >
+                      {child.label}
+                    </Link>
+                  ))}
                 </div>
-              ) : (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    'block px-4 py-3.5 text-lg font-medium rounded-lg transition-colors',
-                    pathname === item.href
-                      ? 'text-brand-blue'
-                      : 'text-brand-navy hover:text-brand-blue'
-                  )}
-                >
-                  {item.label}
-                </Link>
-              )
-            )}
-          </div>
-          <div className="mt-8 px-4">
-            <Link href="/contact" className="btn-primary w-full text-center">
-              Get Free Audit
-            </Link>
-          </div>
+              )}
+            </div>
+          ))}
+          <Link
+            href="/contact"
+            onClick={() => setIsMobileOpen(false)}
+            className="btn-primary mt-8"
+          >
+            Get Free Audit →
+          </Link>
         </nav>
       </div>
     </header>
-  )
+  );
 }

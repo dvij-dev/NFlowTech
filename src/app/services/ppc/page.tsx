@@ -1,102 +1,47 @@
-import { Metadata } from 'next'
-import Link from 'next/link'
-import { ArrowRight, CheckCircle2 } from 'lucide-react'
-import { generatePageMetadata } from '@/lib/metadata'
-import { getService } from '@/data/services'
-import Breadcrumbs from '@/components/layout/Breadcrumbs'
-import JsonLd from '@/components/layout/JsonLd'
-import { serviceSchema } from '@/lib/schema'
-import FAQSection from '@/components/ui/FAQSection'
-import MetricCard from '@/components/ui/MetricCard'
+import type { Metadata } from "next";
+import { ServicePageTemplate } from "@/components/sections/ServicePageTemplate";
 
-const service = getService('ppc')!
-
-export const metadata: Metadata = generatePageMetadata({
-  title: 'PPC Management Agency — Pay-Per-Click Advertising',
-  description: service.description,
-  path: '/services/ppc',
-})
+export const metadata: Metadata = {
+  title: "PPC Marketing — Turn Clicks Into Customers",
+  description: "Expert Google Ads and Meta Ads management. Average 5x ROAS across 138+ brands. Get your free PPC audit.",
+};
 
 export default function PPCPage() {
   return (
-    <>
-      <JsonLd data={serviceSchema({ name: service.name, description: service.description, url: '/services/ppc' })} />
-      <Breadcrumbs items={[{ name: 'Services', href: '/services/ppc' }, { name: 'PPC Advertising', href: '/services/ppc' }]} />
-
-      {/* Hero */}
-      <section className="section-padding bg-gradient-to-br from-brand-gray-50 to-brand-blue-light">
-        <div className="section-container">
-          <div className="max-w-3xl">
-            <p className="overline mb-4">PPC Advertising</p>
-            <h1 className="text-display-md sm:text-display-lg text-brand-navy mb-6">
-              {service.tagline}
-            </h1>
-            <p className="text-body-lg text-brand-gray-600 mb-8">
-              {service.description}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/contact" className="btn-primary gap-2">
-                Get Your Free PPC Audit <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link href="/case-studies" className="btn-secondary">
-                View PPC Results
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Metrics */}
-      <section className="py-12 bg-brand-navy">
-        <div className="section-container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <MetricCard value="138+" label="Brands Managed" dark />
-            <MetricCard value="5x" label="Average ROAS" dark />
-            <MetricCard value="-42%" label="Avg. CPA Reduction" dark />
-            <MetricCard value="$10M+" label="Ad Spend Managed" dark />
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="section-padding bg-white">
-        <div className="section-container">
-          <div className="max-w-3xl mx-auto">
-            <p className="overline mb-3">What&apos;s Included</p>
-            <h2 className="text-display-sm sm:text-display-md text-brand-navy mb-4">
-              Full-Service PPC Management
-            </h2>
-            <p className="text-body-lg text-brand-gray-600 mb-10">
-              Our PPC service covers every aspect of paid search and display advertising. We handle strategy, setup, optimization, and reporting so you can focus on running your business.
-            </p>
-            <div className="space-y-4">
-              {service.features.map((feature) => (
-                <div key={feature} className="flex items-start gap-3 p-4 rounded-xl bg-brand-gray-50">
-                  <CheckCircle2 className="w-5 h-5 text-accent-green mt-0.5 flex-shrink-0" />
-                  <p className="text-body-md text-brand-gray-700">{feature}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <FAQSection faqs={service.faqs} />
-
-      {/* CTA */}
-      <section className="section-padding bg-brand-blue">
-        <div className="section-container text-center">
-          <h2 className="text-display-sm sm:text-display-md text-white mb-4">
-            Ready to Lower Your CPA?
-          </h2>
-          <p className="text-body-lg text-white/80 max-w-2xl mx-auto mb-8">
-            Get a free PPC audit and discover exactly where your ad spend is being wasted. We&apos;ll show you the opportunities you&apos;re missing.
-          </p>
-          <Link href="/contact" className="btn bg-white text-brand-blue px-8 py-4 hover:bg-brand-gray-50 font-semibold">
-            Schedule Your Free Audit
-          </Link>
-        </div>
-      </section>
-    </>
-  )
+    <ServicePageTemplate
+      label="PPC Marketing"
+      title="Turn Clicks Into"
+      titleAccent="Customers"
+      subtitle="Google Ads · Meta Ads · Shopping · Display · Programmatic"
+      description="We don't just manage ad accounts — we architect growth engines. Intent-based targeting, AI-powered bidding, and relentless optimization across Google, Meta, and 10+ ad platforms."
+      heroImage="/images/hero/services-bg.png"
+      stats={[
+        { value: "5x", label: "Average ROAS" },
+        { value: "$10M+", label: "Ad Spend Managed" },
+        { value: "138+", label: "Brands Served" },
+        { value: "60 Days", label: "To First Results" },
+      ]}
+      features={[
+        { title: "Intent-Based Targeting", description: "We target people actively searching for what you sell — not passive browsers. Higher intent = higher conversion." },
+        { title: "AI-Powered Bidding", description: "Our proprietary bid strategies leverage machine learning to find the optimal bid for every auction, every time." },
+        { title: "Product-Led Performance", description: "For e-commerce: Shopping campaigns, Performance Max, and dynamic product ads that showcase your best sellers." },
+        { title: "Conversion Tracking", description: "Enterprise-grade tracking with enhanced conversions, offline conversion import, and full-funnel attribution." },
+        { title: "Landing Page Optimization", description: "We don't just send traffic — we ensure the destination converts. CRO testing included with every campaign." },
+        { title: "Weekly Reporting", description: "Transparent, actionable reports with clear KPIs. No vanity metrics, just revenue and growth." },
+      ]}
+      process={[
+        { step: "01", title: "Deep Audit", description: "We analyze your current ad accounts, tracking, creative, and competitor landscape to find quick wins and long-term opportunities." },
+        { step: "02", title: "Strategy Blueprint", description: "Custom campaign architecture with targeting, bidding, and creative strategies tailored to your industry and goals." },
+        { step: "03", title: "Launch & Test", description: "Campaigns go live with built-in A/B testing frameworks. We test everything — creative, audiences, landing pages, bids." },
+        { step: "04", title: "Optimize & Scale", description: "Continuous optimization based on data, not gut feelings. When something works, we pour fuel on the fire." },
+      ]}
+      faq={[
+        { q: "What's the minimum ad budget you work with?", a: "We typically work with businesses spending $3,000+/month on ads, but we've helped startups scale from $1K budgets to $100K+." },
+        { q: "How long until we see results?", a: "Most clients see meaningful improvements within 30-60 days. For brand new accounts, it takes 2-4 weeks for algorithms to optimize." },
+        { q: "Do you require long-term contracts?", a: "No. We work month-to-month. We earn your business every single month with results." },
+        { q: "Which platforms do you manage?", a: "Google Ads (Search, Shopping, Display, YouTube, PMax), Meta Ads, TikTok Ads, LinkedIn Ads, Microsoft Ads, and more." },
+        { q: "How is NFlow different from other PPC agencies?", a: "We're data scientists first, marketers second. Every decision is backed by data. Plus, you get direct access to senior strategists, not junior account managers." },
+      ]}
+    />
+  );
 }

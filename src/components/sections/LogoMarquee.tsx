@@ -1,54 +1,50 @@
-'use client'
+"use client";
 
-const clients = [
-  { name: 'KindDesigns', alt: 'KindDesigns — 3D printed seawall manufacturer' },
-  { name: 'Tonic Studios', alt: 'Tonic Studios — Arts and crafts brand' },
-  { name: 'Boomerang', alt: 'Boomerang Enterprises — Auto accessories' },
-  { name: 'Avita', alt: 'Avita Jewellery — Fine jewellery brand' },
-  { name: 'Evelaniq', alt: 'Evelaniq — Australian cosmetics brand' },
-  { name: 'Breezy Permits', alt: 'Breezy Permits — Marine construction permitting' },
-  { name: 'La ViE MD', alt: 'La ViE MD — Medical aesthetics' },
-  { name: 'PodcastCola', alt: 'PodcastCola — Podcast production platform' },
-  { name: 'Saitech', alt: 'Saitech Inc — Enterprise IT solutions' },
-  { name: 'Zikhara AI', alt: 'Zikhara AI — AI business intelligence' },
-  { name: 'Ocean Consulting', alt: 'Ocean Consulting — Marine construction consulting' },
-  { name: 'Gallant', alt: 'Gallant — Premium luggage brand' },
-]
+import Image from "next/image";
 
-function LogoPlaceholder({ name, alt }: { name: string; alt: string }) {
+const clientLogos = [
+  { src: "/images/clients/c52e1ca01e6a253d7ffe707cd216e756c05557ba.png", alt: "Partner" },
+  { src: "/images/clients/4397201f1753c1fc9ac362e6f42a9d68a6fe7cf0.png", alt: "Partner" },
+  { src: "/images/clients/c2801e464d08a4638dabd5f328e698082a3e9384.png", alt: "Partner" },
+  { src: "/images/clients/afe57ac17d2891ad5c7750c653a53322b043241a.png", alt: "Partner" },
+  { src: "/images/clients/179a71c8c5539be47487176808dbc13c748ab268.png", alt: "Partner" },
+  { src: "/images/clients/afe2ee474324dff5a3f85d9fccf36f67647d4953.png", alt: "Partner" },
+  { src: "/images/clients/134aa5a2af3bce348ce4863a91dc41e7646c4a9e.png", alt: "Partner" },
+  { src: "/images/clients/60139b1fc81a450dc748360aa668bd5dff9166bf.png", alt: "Partner" },
+  { src: "/images/clients/89d1c6b6ebb74710bd3322b96d3cc4d3c9e05aa8.png", alt: "Partner" },
+  { src: "/images/clients/21e0d02903f06469fae4cb5572bb8b61e9054cbc.png", alt: "Partner" },
+  { src: "/images/clients/42ed1012fb2cbebb8c03ba6a3d98e362a6206b29.png", alt: "Partner" },
+];
+
+export function LogoMarquee() {
+  const doubled = [...clientLogos, ...clientLogos];
+
   return (
-    <div
-      className="flex-shrink-0 flex items-center justify-center h-12 px-8 mx-6
-        bg-brand-gray-100 rounded-lg text-brand-gray-500 text-body-sm font-medium
-        select-none whitespace-nowrap"
-      aria-label={alt}
-      role="img"
-    >
-      {name}
-    </div>
-  )
-}
-
-export default function LogoMarquee() {
-  return (
-    <section className="py-12 sm:py-16 border-y border-brand-gray-100 bg-white overflow-hidden">
-      <div className="section-container mb-6">
-        <p className="text-center text-body-sm text-brand-gray-500 font-medium uppercase tracking-wider">
-          Trusted by 138+ Brands Across the Globe
+    <section className="section-dark py-16 border-y border-white/[0.04]">
+      <div className="container-wide mb-8">
+        <p className="text-caption text-white/30 text-center uppercase tracking-[0.2em]">
+          Trusted by innovative brands worldwide
         </p>
       </div>
-      <div className="relative">
-        {/* Gradient masks */}
-        <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent z-10" />
-        <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent z-10" />
 
-        <div className="flex marquee-track" aria-hidden="false">
-          {/* Duplicate for seamless loop */}
-          {[...clients, ...clients].map((client, i) => (
-            <LogoPlaceholder key={`${client.name}-${i}`} name={client.name} alt={client.alt} />
+      <div className="relative overflow-hidden mask-fade-edges">
+        <div className="flex items-center gap-16 animate-marquee">
+          {doubled.map((logo, i) => (
+            <div
+              key={i}
+              className="flex-shrink-0 h-8 w-auto opacity-40 hover:opacity-80 transition-opacity duration-300 grayscale hover:grayscale-0"
+            >
+              <Image
+                src={logo.src}
+                alt={logo.alt}
+                width={140}
+                height={32}
+                className="h-8 w-auto object-contain brightness-0 invert"
+              />
+            </div>
           ))}
         </div>
       </div>
     </section>
-  )
+  );
 }

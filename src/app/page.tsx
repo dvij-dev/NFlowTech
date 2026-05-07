@@ -1,21 +1,23 @@
-import Hero from '@/components/sections/Hero'
-import LogoMarquee from '@/components/sections/LogoMarquee'
-import ServicesOverview from '@/components/sections/ServicesOverview'
-import FeaturedCaseStudies from '@/components/sections/FeaturedCaseStudies'
-import HowWeWork from '@/components/sections/HowWeWork'
-import Testimonial from '@/components/sections/Testimonial'
-import Industries from '@/components/sections/Industries'
+import { Hero } from "@/components/sections/Hero";
+import { LogoMarquee } from "@/components/sections/LogoMarquee";
+import { ProblemSection } from "@/components/sections/ProblemSection";
+import { ServicesOverview } from "@/components/sections/ServicesOverview";
+import { ResultsShowcase } from "@/components/sections/ResultsShowcase";
+import { ProcessSection } from "@/components/sections/ProcessSection";
+import { Testimonials } from "@/components/sections/Testimonials";
+import { CTASection } from "@/components/sections/CTASection";
 
-export default function HomePage() {
+export default function Home() {
   return (
     <>
       <Hero />
       <LogoMarquee />
+      <ProblemSection />
       <ServicesOverview />
-      <FeaturedCaseStudies />
-      <HowWeWork />
-      <Testimonial />
-      <Industries />
+      <ResultsShowcase />
+      <ProcessSection />
+      <Testimonials />
+      <CTASection />
     </>
-  )
+  );
 }

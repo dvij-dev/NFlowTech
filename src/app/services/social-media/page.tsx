@@ -1,80 +1,46 @@
-import { Metadata } from 'next'
-import Link from 'next/link'
-import { ArrowRight, CheckCircle2 } from 'lucide-react'
-import { generatePageMetadata } from '@/lib/metadata'
-import { getService } from '@/data/services'
-import Breadcrumbs from '@/components/layout/Breadcrumbs'
-import JsonLd from '@/components/layout/JsonLd'
-import { serviceSchema } from '@/lib/schema'
-import FAQSection from '@/components/ui/FAQSection'
-import MetricCard from '@/components/ui/MetricCard'
+import type { Metadata } from "next";
+import { ServicePageTemplate } from "@/components/sections/ServicePageTemplate";
 
-const service = getService('social-media')!
-
-export const metadata: Metadata = generatePageMetadata({
-  title: 'Social Media Advertising Agency — Paid Social Campaigns',
-  description: service.description,
-  path: '/services/social-media',
-})
+export const metadata: Metadata = {
+  title: "Social Media Marketing — Paid Social That Converts",
+  description: "Behavior-based social media marketing that stops the scroll and drives conversions. Meta, TikTok, LinkedIn, and more.",
+};
 
 export default function SocialMediaPage() {
   return (
-    <>
-      <JsonLd data={serviceSchema({ name: service.name, description: service.description, url: '/services/social-media' })} />
-      <Breadcrumbs items={[{ name: 'Services', href: '/services/ppc' }, { name: 'Social Media Ads', href: '/services/social-media' }]} />
-
-      <section className="section-padding bg-gradient-to-br from-brand-gray-50 to-brand-blue-light">
-        <div className="section-container">
-          <div className="max-w-3xl">
-            <p className="overline mb-4">Social Media Advertising</p>
-            <h1 className="text-display-md sm:text-display-lg text-brand-navy mb-6">{service.tagline}</h1>
-            <p className="text-body-lg text-brand-gray-600 mb-8">{service.description}</p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/contact" className="btn-primary gap-2">Get Your Free Social Audit <ArrowRight className="w-4 h-4" /></Link>
-              <Link href="/case-studies" className="btn-secondary">View Social Results</Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-12 bg-brand-navy">
-        <div className="section-container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <MetricCard value="4.5x" label="Average ROAS" dark />
-            <MetricCard value="85+" label="Active Campaigns" dark />
-            <MetricCard value="2.1M+" label="Monthly Impressions" dark />
-            <MetricCard value="-35%" label="Avg. CPA Reduction" dark />
-          </div>
-        </div>
-      </section>
-
-      <section className="section-padding bg-white">
-        <div className="section-container">
-          <div className="max-w-3xl mx-auto">
-            <p className="overline mb-3">What&apos;s Included</p>
-            <h2 className="text-display-sm sm:text-display-md text-brand-navy mb-4">Full-Service Social Ad Management</h2>
-            <p className="text-body-lg text-brand-gray-600 mb-10">We manage every aspect of your paid social campaigns across Meta, TikTok, LinkedIn, and Pinterest — from creative strategy to conversion tracking.</p>
-            <div className="space-y-4">
-              {service.features.map((feature) => (
-                <div key={feature} className="flex items-start gap-3 p-4 rounded-xl bg-brand-gray-50">
-                  <CheckCircle2 className="w-5 h-5 text-accent-green mt-0.5 flex-shrink-0" />
-                  <p className="text-body-md text-brand-gray-700">{feature}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <FAQSection faqs={service.faqs} />
-
-      <section className="section-padding bg-brand-blue">
-        <div className="section-container text-center">
-          <h2 className="text-display-sm sm:text-display-md text-white mb-4">Ready to Scale Your Social Ads?</h2>
-          <p className="text-body-lg text-white/80 max-w-2xl mx-auto mb-8">Get a free social media audit and discover the audiences and creatives that will drive your next wave of growth.</p>
-          <Link href="/contact" className="btn bg-white text-brand-blue px-8 py-4 hover:bg-brand-gray-50 font-semibold">Schedule Your Free Audit</Link>
-        </div>
-      </section>
-    </>
-  )
+    <ServicePageTemplate
+      label="Social Media Marketing"
+      title="Paid Social That"
+      titleAccent="Actually Converts"
+      subtitle="Meta Ads · TikTok · LinkedIn · Organic · Influencer"
+      description="Social media isn't about likes — it's about revenue. We build behavior-based targeting strategies with scroll-stopping creative that turns followers into customers."
+      heroImage="/images/hero/services-bg.png"
+      stats={[
+        { value: "3.2x", label: "Avg. Lead Gen Lift" },
+        { value: "Daily", label: "Optimization Loops" },
+        { value: "85%", label: "Client Retention" },
+        { value: "10+", label: "Platforms Managed" },
+      ]}
+      features={[
+        { title: "Behavior-Based Targeting", description: "We target based on actual user behavior patterns, not just demographics. Reach people who are ready to act." },
+        { title: "Scroll-Stopping Creative", description: "Thumb-stopping creative frameworks designed for each platform. Video, carousel, UGC, and static formats tested continuously." },
+        { title: "Daily Optimization Loops", description: "Our team monitors and adjusts campaigns daily — not weekly. Faster iteration = faster results." },
+        { title: "Community Management", description: "Building engaged communities that amplify your brand. Responding, engaging, and turning followers into advocates." },
+        { title: "Influencer Partnerships", description: "Strategic influencer collaboration with ROI tracking. We find creators who actually drive conversions, not just impressions." },
+        { title: "Social Commerce", description: "Instagram Shop, Facebook Shop, TikTok Shop integration. Turn your social profiles into revenue channels." },
+      ]}
+      process={[
+        { step: "01", title: "Social Audit", description: "Analyze your current social presence, audience insights, competitor strategies, and content performance." },
+        { step: "02", title: "Strategy & Creative Brief", description: "Platform selection, audience targeting, content calendar, and creative production plan." },
+        { step: "03", title: "Launch & Test", description: "Multi-variant creative testing, audience expansion, and bid optimization across all selected platforms." },
+        { step: "04", title: "Scale & Diversify", description: "Double down on winners, kill underperformers, expand to new platforms and audiences." },
+      ]}
+      faq={[
+        { q: "Which social platforms do you manage?", a: "Meta (Facebook & Instagram), TikTok, LinkedIn, X/Twitter, Pinterest, Snapchat, and Reddit. We recommend platforms based on your audience and goals." },
+        { q: "Do you create the content too?", a: "Yes! Our creative team produces video, photography, UGC-style content, carousels, and static ads. We can also work with your existing creative team." },
+        { q: "What's the difference between organic and paid social?", a: "Organic builds community and brand loyalty. Paid drives immediate, scalable results. We recommend both, but most ROI comes from paid social." },
+        { q: "How do you measure social media ROI?", a: "We track end-to-end: from impressions to clicks to conversions to revenue. No vanity metrics — just business outcomes." },
+      ]}
+    />
+  );
 }

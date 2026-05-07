@@ -1,69 +1,46 @@
-import { Metadata } from 'next'
-import Link from 'next/link'
-import { ArrowRight, CheckCircle2 } from 'lucide-react'
-import { generatePageMetadata } from '@/lib/metadata'
-import { getService } from '@/data/services'
-import Breadcrumbs from '@/components/layout/Breadcrumbs'
-import JsonLd from '@/components/layout/JsonLd'
-import { serviceSchema } from '@/lib/schema'
-import FAQSection from '@/components/ui/FAQSection'
-import MetricCard from '@/components/ui/MetricCard'
+import type { Metadata } from "next";
+import { ServicePageTemplate } from "@/components/sections/ServicePageTemplate";
 
-const service = getService('web-design')!
-
-export const metadata: Metadata = generatePageMetadata({
-  title: 'Conversion-Led Web Design — Psychology-Based Design Agency',
-  description: service.description,
-  path: '/services/web-design',
-})
+export const metadata: Metadata = {
+  title: "Web Design — Conversion-Led Design That Performs",
+  description: "Custom web design and development built around marketing goals. Speed optimized, mobile-first, conversion-focused.",
+};
 
 export default function WebDesignPage() {
   return (
-    <>
-      <JsonLd data={serviceSchema({ name: service.name, description: service.description, url: '/services/web-design' })} />
-      <Breadcrumbs items={[{ name: 'Services', href: '/services/ppc' }, { name: 'Web Design', href: '/services/web-design' }]} />
-
-      <section className="section-padding bg-gradient-to-br from-brand-gray-50 to-brand-blue-light">
-        <div className="section-container"><div className="max-w-3xl">
-          <p className="overline mb-4">Web Design & Development</p>
-          <h1 className="text-display-md sm:text-display-lg text-brand-navy mb-6">{service.tagline}</h1>
-          <p className="text-body-lg text-brand-gray-600 mb-8">{service.description}</p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/contact" className="btn-primary gap-2">Get a Free Design Consultation <ArrowRight className="w-4 h-4" /></Link>
-            <Link href="/case-studies" className="btn-secondary">View Our Work</Link>
-          </div>
-        </div></div>
-      </section>
-
-      <section className="py-12 bg-brand-navy">
-        <div className="section-container"><div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <MetricCard value="85+" label="Websites Launched" dark />
-          <MetricCard value="+65%" label="Avg. Conversion Lift" dark />
-          <MetricCard value="95+" label="Lighthouse Score" dark />
-          <MetricCard value="4.9★" label="Client Satisfaction" dark />
-        </div></div>
-      </section>
-
-      <section className="section-padding bg-white">
-        <div className="section-container"><div className="max-w-3xl mx-auto">
-          <p className="overline mb-3">What&apos;s Included</p>
-          <h2 className="text-display-sm sm:text-display-md text-brand-navy mb-4">Design That Converts</h2>
-          <p className="text-body-lg text-brand-gray-600 mb-10">Every website we build is engineered for conversion. We combine behavioral psychology, data-driven design decisions, and modern development practices to create sites that look beautiful and perform even better.</p>
-          <div className="space-y-4">
-            {service.features.map((f) => (<div key={f} className="flex items-start gap-3 p-4 rounded-xl bg-brand-gray-50"><CheckCircle2 className="w-5 h-5 text-accent-green mt-0.5 flex-shrink-0" /><p className="text-body-md text-brand-gray-700">{f}</p></div>))}
-          </div>
-        </div></div>
-      </section>
-
-      <FAQSection faqs={service.faqs} />
-
-      <section className="section-padding bg-brand-blue">
-        <div className="section-container text-center">
-          <h2 className="text-display-sm sm:text-display-md text-white mb-4">Ready for a Website That Converts?</h2>
-          <p className="text-body-lg text-white/80 max-w-2xl mx-auto mb-8">Get a free design consultation and discover how psychology-driven design can transform your conversion rates.</p>
-          <Link href="/contact" className="btn bg-white text-brand-blue px-8 py-4 hover:bg-brand-gray-50 font-semibold">Book Free Consultation</Link>
-        </div>
-      </section>
-    </>
-  )
+    <ServicePageTemplate
+      label="Web Design & Development"
+      title="Conversion-Led Design"
+      titleAccent="That Performs"
+      subtitle="Custom Design · E-Commerce · Landing Pages · CRO · Speed Optimization"
+      description="We build websites that don't just look premium — they perform. Every pixel serves a purpose. Every interaction guides the visitor toward conversion."
+      heroImage="/images/hero/services-bg.png"
+      stats={[
+        { value: "40%", label: "Avg. Conversion Lift" },
+        { value: "<2s", label: "Load Times" },
+        { value: "100%", label: "Mobile Responsive" },
+        { value: "A/B", label: "Tested Everything" },
+      ]}
+      features={[
+        { title: "Strategy-First Design", description: "We don't just make it pretty. We start with your conversion goals and work backwards to design the ideal user journey." },
+        { title: "Speed Optimization", description: "Sub-2-second load times. Optimized images, lazy loading, code splitting, and edge caching for maximum performance." },
+        { title: "Mobile-First Development", description: "Over 60% of web traffic is mobile. We design mobile-first, then scale up — ensuring perfect experiences everywhere." },
+        { title: "E-Commerce Stores", description: "Shopify, WooCommerce, and custom e-commerce solutions. Built for product discovery, upselling, and seamless checkout." },
+        { title: "Landing Pages", description: "High-converting landing pages for PPC and social campaigns. A/B tested and optimized for maximum Quality Score." },
+        { title: "CRO & A/B Testing", description: "Continuous conversion rate optimization. We test headlines, layouts, CTAs, and user flows to squeeze every conversion." },
+      ]}
+      process={[
+        { step: "01", title: "Discovery & Research", description: "Deep dive into your business goals, audience, competitors, and current site analytics to inform the design strategy." },
+        { step: "02", title: "Wireframes & Design", description: "Low-fidelity wireframes for structure, then high-fidelity designs with your brand identity. Full approval before development." },
+        { step: "03", title: "Build & QA", description: "Clean, semantic code. Cross-browser testing. Accessibility compliance. Performance optimization. Everything pixel-perfect." },
+        { step: "04", title: "Launch & Optimize", description: "Post-launch monitoring, heatmap analysis, and ongoing CRO to ensure the site keeps performing." },
+      ]}
+      faq={[
+        { q: "How long does a website take to build?", a: "Simple sites: 4-6 weeks. Complex e-commerce: 8-12 weeks. Landing pages: 1-2 weeks. We always provide accurate timelines upfront." },
+        { q: "What platforms do you build on?", a: "We're platform-agnostic — Next.js, WordPress, Shopify, Webflow, or custom builds depending on your needs and budget." },
+        { q: "Do you handle hosting and maintenance?", a: "Yes. We offer managed hosting with 99.9% uptime, daily backups, security monitoring, and ongoing maintenance packages." },
+        { q: "Can you redesign our existing site?", a: "Absolutely. We audit your current site, identify what's working and what's not, and rebuild it for maximum conversion and performance." },
+      ]}
+    />
+  );
 }
