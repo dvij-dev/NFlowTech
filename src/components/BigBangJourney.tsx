@@ -109,10 +109,17 @@ function buildScene(canvas: HTMLCanvasElement) {
   const camera = new THREE.PerspectiveCamera(60, W / H, 0.1, 1000)
   camera.position.set(0, 0, 12)
 
+  // ── Lighting (for Phong/Standard materials) ──
+  const ambientLight = new THREE.AmbientLight(0x334466, 0.3)
+  scene.add(ambientLight)
+  const dirLight = new THREE.DirectionalLight(0xaaccff, 0.8)
+  dirLight.position.set(5, 8, 10)
+  scene.add(dirLight)
+
   // ── Post-Processing ──
   const composer = new EffectComposer(renderer)
   composer.addPass(new RenderPass(scene, camera))
-  const bloomPass = new UnrealBloomPass(new THREE.Vector2(W, H), 1.0, 0.4, 0.2)
+  const bloomPass = new UnrealBloomPass(new THREE.Vector2(W, H), 0.8, 0.5, 0.3)
   composer.addPass(bloomPass)
   composer.addPass(new OutputPass())
 
@@ -153,16 +160,30 @@ function buildScene(canvas: HTMLCanvasElement) {
   // ══════════════════════════════════════════════════
   // COSMIC EGG — MeshBasicMaterial (guaranteed visible)
   // ══════════════════════════════════════════════════
-  // Outer shell: translucent sphere
+  // Outer shell: Phong sphere with specular highlights for 3D depth
   const eggShellGeo = new THREE.SphereGeometry(2.5, 64, 64)
-  const eggShellMat = new THREE.MeshBasicMaterial({
-    color: 0x88ccdd,
+  const eggShellMat = new THREE.MeshPhongMaterial({
+    color: 0x446688,
+    emissive: 0x112233,
+    specular: 0xaaddff,
+    shininess: 60,
     transparent: true,
     opacity: 0,
     side: THREE.FrontSide,
   })
   const eggShell = new THREE.Mesh(eggShellGeo, eggShellMat)
   scene.add(eggShell)
+
+  // Wireframe overlay for surface detail
+  const eggWireGeo = new THREE.IcosahedronGeometry(2.52, 3)
+  const eggWireMat = new THREE.MeshBasicMaterial({
+    color: COLORS.cyan,
+    wireframe: true,
+    transparent: true,
+    opacity: 0,
+  })
+  const eggWire = new THREE.Mesh(eggWireGeo, eggWireMat)
+  scene.add(eggWire)
 
   // Inner core: bright glowing sphere
   const eggCoreGeo = new THREE.SphereGeometry(1.2, 32, 32)
@@ -174,8 +195,8 @@ function buildScene(canvas: HTMLCanvasElement) {
   const eggCore = new THREE.Mesh(eggCoreGeo, eggCoreMat)
   scene.add(eggCore)
 
-  // Glow sprite behind egg
-  const eggGlow = createGlowSprite(COLORS.cyan, 12)
+  // Glow sprite behind egg (SMALLER - was 12, reduced to avoid over-bloom)
+  const eggGlow = createGlowSprite(COLORS.cyan, 8)
   eggGlow.material.opacity = 0
   scene.add(eggGlow)
 
@@ -293,14 +314,14 @@ function buildScene(canvas: HTMLCanvasElement) {
   }
 
   const STAR_CFG = [
-    { pos: [0, 0, 0], color: COLORS.cyan, coreSize: 0.8, glowSize: 8, activate: 0.45, label: 'Precision Performance',
-      orbits: [{ r: 5, count: 3, speed: 0.12, tilt: 0.1, pColor: COLORS.cyan }] },
-    { pos: [-7, 2.5, -3], color: COLORS.magenta, coreSize: 0.65, glowSize: 7, activate: 0.60, label: 'Social Engine',
-      orbits: [{ r: 4.5, count: 3, speed: 0.10, tilt: -0.15, pColor: COLORS.magenta }] },
-    { pos: [6, -2, -4], color: COLORS.green, coreSize: 0.55, glowSize: 6, activate: 0.75, label: 'Organic & Design',
+    { pos: [0, 0, 0], color: COLORS.cyan, coreSize: 0.6, glowSize: 4, activate: 0.45, label: 'Precision Performance',
+      orbits: [{ r: 4, count: 3, speed: 0.12, tilt: 0.1, pColor: COLORS.cyan }] },
+    { pos: [-8, 3, -2], color: COLORS.magenta, coreSize: 0.5, glowSize: 3.5, activate: 0.60, label: 'Social Engine',
+      orbits: [{ r: 3.5, count: 3, speed: 0.10, tilt: -0.15, pColor: COLORS.magenta }] },
+    { pos: [7, -2.5, -3], color: COLORS.green, coreSize: 0.45, glowSize: 3, activate: 0.75, label: 'Organic & Design',
       orbits: [
-        { r: 3.5, count: 2, speed: 0.08, tilt: 0.2, pColor: COLORS.green },
-        { r: 6, count: 3, speed: 0.06, tilt: -0.1, pColor: COLORS.gold },
+        { r: 3, count: 2, speed: 0.08, tilt: 0.2, pColor: COLORS.green },
+        { r: 5, count: 3, speed: 0.06, tilt: -0.1, pColor: COLORS.gold },
       ] },
   ]
 
@@ -418,24 +439,31 @@ function buildScene(canvas: HTMLCanvasElement) {
     // PHASE: ACTIVATION (click → egg forms)
     // ══════════════════════════════════
     if (activated && ap < 1) {
-      // Bloom flash
-      bloomPass.strength = 1.0 + eAp * 3.0
-      renderer.toneMappingExposure = 1.2 + eAp * 1.0
+      // Bloom surge during activation
+      bloomPass.strength = 0.8 + eAp * 1.5
+      renderer.toneMappingExposure = 1.2 + eAp * 0.5
 
-      // Egg shell fades in
-      eggShellMat.opacity = eAp * 0.35
+      // Egg shell fades in with 3D shading
+      eggShellMat.opacity = eAp * 0.7
+      eggShellMat.emissive.setHSL(0.55, 0.5, eAp * 0.15)
       eggShell.scale.setScalar(eAp * 1.0)
 
+      // Wireframe overlay
+      eggWireMat.opacity = eAp * 0.12
+      eggWire.scale.setScalar(eAp * 1.0)
+      eggWire.rotation.y = t * 0.15
+      eggWire.rotation.x = t * 0.08
+
       // Core brightens
-      eggCoreMat.opacity = eAp * 0.9
+      eggCoreMat.opacity = eAp * 0.8
       eggCore.scale.setScalar(eAp * 1.0)
 
-      // Glow expands
-      eggGlow.material.opacity = eAp * 0.8
-      eggGlow.scale.setScalar(eAp * 12)
+      // Glow expands (controlled)
+      eggGlow.material.opacity = eAp * 0.6
+      eggGlow.scale.setScalar(eAp * 8)
 
       // Light
-      eggLight.intensity = eAp * 10
+      eggLight.intensity = eAp * 8
     }
 
     // ══════════════════════════════════
@@ -445,60 +473,70 @@ function buildScene(canvas: HTMLCanvasElement) {
       if (p < 0.15) {
         // ── EGG ENERGY BUILDING ──
         const ep = p / 0.15 // 0→1
-        const pulse = 0.8 + 0.2 * Math.sin(t * (3 + ep * 5))
+        const pulse = 0.95 + 0.05 * Math.sin(t * (3 + ep * 5))
 
-        eggShellMat.opacity = 0.25 + ep * 0.15
-        eggShellMat.color.setHSL(0.52 - ep * 0.02, 0.4 + ep * 0.3, 0.6 + ep * 0.2)
+        eggShellMat.opacity = 0.6 + ep * 0.15
+        eggShellMat.emissive.setHSL(0.55, 0.6, 0.05 + ep * 0.15)
         eggShell.scale.setScalar(pulse)
 
-        eggCoreMat.opacity = 0.8 + ep * 0.2
-        eggCoreMat.color.lerpColors(new THREE.Color(COLORS.cyan), new THREE.Color(COLORS.white), ep * 0.5)
-        eggCore.scale.setScalar(0.8 + ep * 0.5 + Math.sin(t * 4) * 0.05 * ep)
+        eggWireMat.opacity = 0.08 + ep * 0.12
+        eggWire.scale.setScalar(pulse * 1.01)
+        eggWire.rotation.y = t * 0.15 + ep * 0.5
+        eggWire.rotation.x = t * 0.08
 
-        eggGlow.material.opacity = 0.6 + ep * 0.4
-        eggGlow.scale.setScalar(10 + ep * 6)
+        eggCoreMat.opacity = 0.7 + ep * 0.3
+        eggCoreMat.color.lerpColors(new THREE.Color(COLORS.cyan), new THREE.Color(COLORS.white), ep * 0.4)
+        eggCore.scale.setScalar(0.8 + ep * 0.4 + Math.sin(t * 4) * 0.03 * ep)
 
-        eggLight.intensity = 8 + ep * 12
+        eggGlow.material.opacity = 0.4 + ep * 0.3
+        eggGlow.scale.setScalar(6 + ep * 3)
 
-        bloomPass.strength = 1.5 + ep * 1.5
-        renderer.toneMappingExposure = 1.5 + ep * 0.5
+        eggLight.intensity = 5 + ep * 8
+
+        bloomPass.strength = 1.0 + ep * 0.8
+        renderer.toneMappingExposure = 1.3 + ep * 0.3
 
       } else if (p < 0.30) {
         // ── CRACKING ──
         const cp = (p - 0.15) / 0.15 // 0→1
-        const shake = Math.sin(t * 30) * cp * 0.06
+        const shake = Math.sin(t * 30) * cp * 0.08
 
-        // Egg distorts and cracks
-        eggShellMat.opacity = 0.4 * (1 - cp * 0.5)
-        eggShellMat.color.setHSL(0.5, 0.7, 0.7 + cp * 0.3) // brightens
-        eggShell.scale.setScalar(1 + cp * 0.3 + shake)
+        // Egg shell distorts and brightens
+        eggShellMat.opacity = 0.75 * (1 - cp * 0.3)
+        eggShellMat.emissive.setHSL(0.5, 0.7, 0.2 + cp * 0.3)
+        eggShell.scale.setScalar(1 + cp * 0.2 + shake)
 
-        // Core gets VERY bright
+        // Wireframe intensifies as cracks form
+        eggWireMat.opacity = 0.2 + cp * 0.4
+        eggWireMat.color.lerpColors(new THREE.Color(COLORS.cyan), new THREE.Color(COLORS.white), cp)
+        eggWire.scale.setScalar((1 + cp * 0.2) * 1.01)
+        eggWire.rotation.y += 0.02
+
+        // Core gets brighter
         eggCoreMat.opacity = 1.0
         eggCoreMat.color.set(0xffffff)
-        eggCore.scale.setScalar(1.3 + cp * 1.5)
+        eggCore.scale.setScalar(1.2 + cp * 0.8)
 
-        eggGlow.material.opacity = 1.0
-        eggGlow.scale.setScalar(16 + cp * 10)
+        eggGlow.material.opacity = 0.7 + cp * 0.3
+        eggGlow.scale.setScalar(9 + cp * 5)
 
-        eggLight.intensity = 20 + cp * 30
+        eggLight.intensity = 13 + cp * 15
 
-        // Shell fragments fly out
+        // Shell fragments emerge and fly outward
         fragGroup.visible = true
         for (let i = 0; i < FRAG_N; i++) {
           const mesh = fragGroup.children[i] as THREE.Mesh
           const fd = fragData[i]
-          const dist = 2.5 + cp * 6
+          const dist = 2.5 + cp * 8
           mesh.position.copy(fd.dir).multiplyScalar(dist)
           mesh.rotation.set(fd.rot.x * t, fd.rot.y * t, fd.rot.z * t)
-          ;(mesh.material as THREE.MeshBasicMaterial).opacity = cp * 0.8
-          ;(mesh.material as THREE.MeshBasicMaterial).color.setHSL(0.5, 0.5, 0.7 + cp * 0.3)
+          ;(mesh.material as THREE.MeshBasicMaterial).opacity = Math.min(1, cp * 2) * 0.9
+          ;(mesh.material as THREE.MeshBasicMaterial).color.setHSL(0.55, 0.6, 0.6 + cp * 0.4)
         }
 
-        bloomPass.strength = 3.0 + cp * 3.0
-        renderer.toneMappingExposure = 2.0 + cp * 1.5
+        bloomPass.strength = 1.8 + cp * 1.0
+        renderer.toneMappingExposure = 1.6 + cp * 0.5
 
-        // Camera shake
         camera.position.x = shake
         camera.position.y = shake * 0.7
 
@@ -507,80 +545,81 @@ function buildScene(canvas: HTMLCanvasElement) {
         const bp = (p - 0.30) / 0.15 // 0→1
         const eBp = 1 - Math.pow(1 - bp, 2)
 
-        // Egg dissolves in flash
-        const eggFade = Math.max(0, 1 - bp * 4)
-        eggShellMat.opacity = 0.2 * eggFade
-        eggShell.scale.setScalar(1.3 + bp * 8)
-        eggCoreMat.opacity = eggFade
-        eggCore.scale.setScalar(2.8 + bp * 15)
-        eggGlow.material.opacity = Math.max(0, 1 - bp * 2)
-        eggGlow.scale.setScalar(26 + bp * 40)
-        eggLight.intensity = Math.max(0, 50 * (1 - bp * 1.5))
+        // Egg dissolves FAST
+        const eggFade = Math.max(0, 1 - bp * 5) // gone by 20% into bang
+        eggShellMat.opacity = 0.5 * eggFade
+        eggShell.scale.setScalar(1.2 + bp * 3)
+        eggWireMat.opacity = 0.6 * eggFade
+        eggWire.scale.setScalar(1.2 + bp * 3)
+        eggCoreMat.opacity = eggFade * 0.5
+        eggCore.scale.setScalar(2.0 + bp * 5)
+        eggGlow.material.opacity = Math.max(0, 0.8 - bp * 2)
+        eggGlow.scale.setScalar(14 + bp * 10)
+        eggLight.intensity = Math.max(0, 28 * (1 - bp * 2))
 
-        // Fragments fly far
-        fragGroup.visible = bp < 0.6
+        // Fragments fly far and fade
+        fragGroup.visible = bp < 0.7
         for (let i = 0; i < FRAG_N; i++) {
           const mesh = fragGroup.children[i] as THREE.Mesh
           const fd = fragData[i]
-          mesh.position.copy(fd.dir).multiplyScalar(8.5 + eBp * 40)
-          mesh.rotation.set(fd.rot.x * t, fd.rot.y * t, fd.rot.z * t)
-          ;(mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.8 - bp * 1.5)
+          mesh.position.copy(fd.dir).multiplyScalar(10 + eBp * 30)
+          mesh.rotation.set(fd.rot.x * t * 2, fd.rot.y * t * 2, fd.rot.z * t * 2)
+          ;(mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.9 - bp * 1.5)
         }
 
-        // EXPLOSION PARTICLES
+        // EXPLOSION PARTICLES burst outward
         particles.visible = true
         const posAttr = partGeo.attributes.position as THREE.BufferAttribute
         const alphaAttr = partGeo.attributes.aAlpha as THREE.BufferAttribute
         for (let i = 0; i < PART_N; i++) {
           const v = pVel[i]
-          posAttr.setXYZ(i, v.x * eBp * 25, v.y * eBp * 25, v.z * eBp * 25)
-          alphaAttr.setX(i, Math.min(1, bp * 5) * (0.3 + Math.random() * 0.7))
+          posAttr.setXYZ(i, v.x * eBp * 20, v.y * eBp * 20, v.z * eBp * 20)
+          alphaAttr.setX(i, Math.min(0.8, bp * 4) * (0.3 + Math.random() * 0.5))
         }
         posAttr.needsUpdate = true
         alphaAttr.needsUpdate = true
 
-        // Massive bloom flash then settle
-        bloomPass.strength = Math.max(1.5, 6.0 - bp * 4.5)
-        renderer.toneMappingExposure = Math.max(1.2, 3.5 - bp * 2.3)
+        // Bloom: brief flash then settle quickly
+        bloomPass.strength = bp < 0.15 ? 2.5 + (0.15 - bp) * 10 : Math.max(1.0, 2.5 - (bp - 0.15) * 2)
+        renderer.toneMappingExposure = bp < 0.15 ? 2.0 : Math.max(1.2, 2.0 - bp * 1.0)
 
-        camera.position.x = 0
-        camera.position.y = 0
+        camera.position.x = Math.sin(t * 20) * (1 - bp) * 0.05
+        camera.position.y = Math.cos(t * 15) * (1 - bp) * 0.03
 
       } else {
         // ── POST-BANG: nebula settles, stars emerge ──
         eggShellMat.opacity = 0
+        eggWireMat.opacity = 0
         eggCoreMat.opacity = 0
         eggGlow.material.opacity = 0
         eggLight.intensity = 0
         fragGroup.visible = false
 
-        bloomPass.strength = 1.5
-        renderer.toneMappingExposure = 1.2
+        bloomPass.strength = 0.8  // CONTROLLED — no more overbloom
+        renderer.toneMappingExposure = 1.1
 
-        // Particles transition from explosion to orbiting nebula
+        // Particles transition from explosion to sparse nebula
         particles.visible = true
         const posAttr = partGeo.attributes.position as THREE.BufferAttribute
         const alphaAttr = partGeo.attributes.aAlpha as THREE.BufferAttribute
-        const settleP = Math.min(1, (p - 0.45) / 0.12)
+        const settleP = Math.min(1, (p - 0.45) / 0.10)
 
         for (let i = 0; i < PART_N; i++) {
           const v = pVel[i]
           const o = pOrbit[i]
-          // Exploded position
-          const ex = v.x * 25, ey = v.y * 25, ez = v.z * 25
-          // Orbit position
+          const ex = v.x * 20, ey = v.y * 20, ez = v.z * 20
           const angle = o.a + t * o.sp
           const ox = Math.cos(angle) * o.r
           const oy = o.y + Math.sin(angle) * o.r * o.tilt
           const oz = Math.sin(angle) * o.r
-          // Lerp
           posAttr.setXYZ(i,
             ex + (ox - ex) * settleP,
             ey + (oy - ey) * settleP,
             ez + (oz - ez) * settleP
           )
-          const fade = p > 0.85 ? Math.max(0.03, 1 - (p - 0.85) / 0.15) : 1
-          alphaAttr.setX(i, (0.1 + Math.random() * 0.2) * fade)
+          // Much lower alpha to prevent washout
+          const fade = p > 0.85 ? Math.max(0.01, 1 - (p - 0.85) / 0.15) : 1
+          alphaAttr.setX(i, (0.03 + Math.random() * 0.08) * fade)
         }
         posAttr.needsUpdate = true
         alphaAttr.needsUpdate = true
@@ -589,21 +628,20 @@ function buildScene(canvas: HTMLCanvasElement) {
         const activePos: THREE.Vector3[] = []
 
         starSystems.forEach(sys => {
-          const vis = Math.max(0, Math.min(1, (p - sys.activateAt) / 0.05))
+          const vis = Math.max(0, Math.min(1, (p - sys.activateAt) / 0.06))
 
           if (vis > 0) {
-            const breathe = 1 + Math.sin(t * 2.5) * 0.1
+            const breathe = 1 + Math.sin(t * 2.5) * 0.06
             ;(sys.core.material as THREE.MeshBasicMaterial).opacity = vis
             sys.core.scale.setScalar(breathe * vis)
-            sys.glow.material.opacity = vis * 0.9
-            sys.glow.scale.setScalar(vis * (sys.glow.scale.x > 0 ? 1 : 0.01))
-            sys.light.intensity = vis * 12
+            sys.glow.material.opacity = vis * 0.7
+            sys.light.intensity = vis * 8
 
             activePos.push(sys.pos)
 
             // Rings
             sys.rings.forEach(ring => {
-              ;(ring.material as THREE.LineBasicMaterial).opacity = vis * 0.3
+              ;(ring.material as THREE.LineBasicMaterial).opacity = vis * 0.25
             })
 
             // Planets orbit
@@ -622,10 +660,9 @@ function buildScene(canvas: HTMLCanvasElement) {
                 sys.pos.z + lz * cTilt
               )
 
-              // Planet glow follows
               const pg = sys.planetGlows[pi]
               pg.position.copy(pl.position)
-              pg.material.opacity = pVis * 0.7
+              pg.material.opacity = pVis * 0.5
             })
           } else {
             ;(sys.core.material as THREE.MeshBasicMaterial).opacity = 0
@@ -647,7 +684,7 @@ function buildScene(canvas: HTMLCanvasElement) {
             }
           }
           beamGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts), 3))
-          beamMat.opacity = 0.08
+          beamMat.opacity = 0.12
         } else {
           beamMat.opacity = 0
         }
@@ -659,26 +696,31 @@ function buildScene(canvas: HTMLCanvasElement) {
     if (!activated || ap < 1) {
       cx = 0; cy = 0; cz = 12
     } else if (p < 0.15) {
-      cz = 10 // close on egg
+      cz = 9 // close on egg
     } else if (p < 0.30) {
-      cz = 10 + ((p - 0.15) / 0.15) * 4 // pull back during crack
+      const cp2 = (p - 0.15) / 0.15
+      cz = 9 + cp2 * 3 // slight pullback during crack
     } else if (p < 0.45) {
       const bp = (p - 0.30) / 0.15
-      cy = bp * 3
-      cz = 14 + bp * 16 // dramatic pullback
+      cy = bp * 2
+      cz = 12 + bp * 18 // dramatic pullback during bang
     } else if (p < 0.60) {
+      // Star 1: looking at center from above
       const sp = (p - 0.45) / 0.15
-      cx = sp * 1; cy = 3 + sp * 2; cz = 22 + sp * 4
+      cx = sp * 2; cy = 2 + sp * 5; cz = 30 + sp * 8
     } else if (p < 0.75) {
+      // Star 2: wider view, different angle
       const sp = (p - 0.60) / 0.15
-      cx = 1 - sp * 3; cy = 5 + sp * 2; cz = 26 + sp * 5
+      cx = 2 - sp * 5; cy = 7 + sp * 3; cz = 38 + sp * 8
     } else if (p < 0.90) {
+      // Star 3: even wider
       const sp = (p - 0.75) / 0.15
-      cx = -2 + sp * 3; cy = 7 + sp * 2; cz = 31 + sp * 6
+      cx = -3 + sp * 4; cy = 10 + sp * 3; cz = 46 + sp * 10
     } else {
-      cx = 1; cy = 10; cz = 40
+      // Full universe reveal
+      cx = 1; cy = 14; cz = 60
     }
-    camera.position.lerp(new THREE.Vector3(cx, cy, cz), 0.08)
+    camera.position.lerp(new THREE.Vector3(cx, cy, cz), 0.06)
     camera.lookAt(0, 0, 0)
 
     // ── Render ──
