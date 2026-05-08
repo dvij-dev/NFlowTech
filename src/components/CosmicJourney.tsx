@@ -189,8 +189,8 @@ void main() {
   vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
   
   // Size attenuation
-  gl_PointSize = aSize * (300.0 / -mvPosition.z);
-  gl_PointSize = clamp(gl_PointSize, 1.0, 64.0);
+  gl_PointSize = aSize * (80.0 / -mvPosition.z);
+  gl_PointSize = clamp(gl_PointSize, 0.5, 6.0);
   
   gl_Position = projectionMatrix * mvPosition;
   
@@ -228,8 +228,8 @@ void main() {
   vRotation = aRotation + uTime * 0.05;
   
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-  gl_PointSize = aSize * (400.0 / -mvPosition.z);
-  gl_PointSize = clamp(gl_PointSize, 2.0, 200.0);
+  gl_PointSize = aSize * (60.0 / -mvPosition.z);
+  gl_PointSize = clamp(gl_PointSize, 1.0, 30.0);
   gl_Position = projectionMatrix * mvPosition;
 }
 `;
@@ -253,7 +253,7 @@ void main() {
   // Color gradient from center
   vec3 color = mix(uColor1, uColor2, d * 2.0);
   
-  gl_FragColor = vec4(color, alpha * 0.35);
+  gl_FragColor = vec4(color, alpha * 0.12);
 }
 `;
 
@@ -291,8 +291,8 @@ void main() {
   vig = pow(vig, uVignetteIntensity);
   color *= vig;
   
-  // Tone mapping (ACES-like)
-  color = color / (color + 0.5);
+  // Tone mapping (ACES-like, gentler)
+  color = color / (color + 0.8);
   
   gl_FragColor = vec4(color, 1.0);
 }
@@ -473,10 +473,10 @@ export default function CosmicJourney() {
       uniforms: {
         tScene: { value: sceneRT.texture },
         tBloom: { value: bloomRT2.texture },
-        uBloomStrength: { value: 0.8 },
+        uBloomStrength: { value: 0.25 },
         uTint: { value: new THREE.Vector3(0.6, 0.4, 1.0) },
-        uTintStrength: { value: 0.15 },
-        uVignetteIntensity: { value: 0.25 },
+        uTintStrength: { value: 0.06 },
+        uVignetteIntensity: { value: 0.35 },
       },
     });
     const compositeQuad = new THREE.Mesh(
@@ -543,21 +543,21 @@ export default function CosmicJourney() {
     scene.add(rimLight);
 
     // Fill light — purple from below
-    const fillLight = new THREE.PointLight(0x7b00ff, 2.0, 15);
+    const fillLight = new THREE.PointLight(0x7b00ff, 1.0, 15);
     fillLight.position.set(-2, -3, 2);
     scene.add(fillLight);
 
     // Spot — dramatic top-down
-    const spotLight = new THREE.SpotLight(0xffc06f, 3.0, 20, Math.PI / 6, 0.5, 1);
+    const spotLight = new THREE.SpotLight(0xffc06f, 1.5, 20, Math.PI / 6, 0.5, 1);
     spotLight.position.set(0, 8, 2);
     spotLight.target.position.set(0, 0, 0);
     scene.add(spotLight);
     scene.add(spotLight.target);
 
     // Moving accent lights
-    const accentLight1 = new THREE.PointLight(0xe900ff, 1.5, 12);
-    const accentLight2 = new THREE.PointLight(0x00f4ff, 1.5, 12);
-    const accentLight3 = new THREE.PointLight(0xffc06f, 1.0, 10);
+    const accentLight1 = new THREE.PointLight(0xe900ff, 0.6, 12);
+    const accentLight2 = new THREE.PointLight(0x00f4ff, 0.6, 12);
+    const accentLight3 = new THREE.PointLight(0xffc06f, 0.4, 10);
     scene.add(accentLight1, accentLight2, accentLight3);
 
     // Hemisphere for natural fill
@@ -565,31 +565,30 @@ export default function CosmicJourney() {
     scene.add(hemiLight);
 
     // ─── Copy lights to bloom scene ─────────────────────────────────
-    const bloomAmbient = new THREE.AmbientLight(0x1a1030, 0.2);
+    const bloomAmbient = new THREE.AmbientLight(0x1a1030, 0.1);
     bloomScene.add(bloomAmbient);
-    const bloomKey = new THREE.DirectionalLight(0xffeedd, 0.8);
+    const bloomKey = new THREE.DirectionalLight(0xffeedd, 0.3);
     bloomKey.position.copy(keyLight.position);
     bloomScene.add(bloomKey);
-    const bloomRim = new THREE.DirectionalLight(0x00f4ff, 0.5);
-    bloomRim.position.copy(rimLight.position);
-    bloomScene.add(bloomRim);
 
     // ─── Cosmic Egg / Orb ───────────────────────────────────────────
     const orbGeometry = new THREE.SphereGeometry(1.2, 128, 128);
     
     // Main orb (PBR)
     const orbMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xb5fafa,
-      metalness: 0.1,
-      roughness: 0.15,
-      transmission: 0.6,
-      thickness: 1.5,
-      ior: 1.8,
+      color: 0x88ddff,
+      metalness: 0.0,
+      roughness: 0.1,
+      transmission: 0.85,
+      thickness: 0.8,
+      ior: 1.5,
       clearcoat: 1.0,
-      clearcoatRoughness: 0.1,
-      envMapIntensity: 2.0,
+      clearcoatRoughness: 0.05,
+      envMapIntensity: 1.5,
+      emissive: 0x1a4466,
+      emissiveIntensity: 0.3,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.95,
     });
 
     const orbMesh = new THREE.Mesh(orbGeometry, orbMaterial);
@@ -610,10 +609,10 @@ export default function CosmicJourney() {
         uDiffuseColor: { value: new THREE.Color(0xb5fafa) },
         uFresnelColor: { value: new THREE.Color(0x94b9eb) },
         uFresnelPower: { value: 2.5 },
-        uFresnelIntensity: { value: 3.0 },
+        uFresnelIntensity: { value: 1.5 },
         uGlowColor: { value: new THREE.Color(0xffc06f) },
         uGlowColor2: { value: new THREE.Color(0x4444ff) },
-        uGlowIntensity: { value: 0.6 },
+        uGlowIntensity: { value: 0.25 },
         uPhase: { value: 0.0 },
       },
       transparent: true,
@@ -627,9 +626,9 @@ export default function CosmicJourney() {
     // Inner light orb (small bright core)
     const coreGeometry = new THREE.SphereGeometry(0.3, 32, 32);
     const coreMaterial = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
+      color: 0xaaddff,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.6,
     });
     const coreMesh = new THREE.Mesh(coreGeometry, coreMaterial);
     bloomScene.add(coreMesh);
@@ -658,7 +657,7 @@ export default function CosmicJourney() {
       const bloomRingMat = new THREE.MeshBasicMaterial({
         color: 0x94b9eb,
         transparent: true,
-        opacity: 0.3,
+        opacity: 0.1,
       });
       const bloomRing = new THREE.Mesh(ringGeo.clone(), bloomRingMat);
       bloomRing.rotation.copy(ring.rotation);
@@ -711,7 +710,7 @@ export default function CosmicJourney() {
       const bloomShardMat = new THREE.MeshBasicMaterial({
         color: new THREE.Color().setHSL(hue, 1.0, 0.5),
         transparent: true,
-        opacity: 0.3,
+        opacity: 0.1,
       });
       const bloomShard = new THREE.Mesh(shardGeo.clone(), bloomShardMat);
       bloomShard.position.copy(shard.position);
@@ -744,7 +743,7 @@ export default function CosmicJourney() {
       dustPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       dustPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       dustPositions[i * 3 + 2] = r * Math.cos(phi);
-      dustSizes[i] = 1.0 + Math.random() * 4.0;
+      dustSizes[i] = 0.3 + Math.random() * 1.2;
       dustSpeeds[i] = 0.1 + Math.random() * 0.4;
       dustPhases[i] = Math.random() * Math.PI * 2;
       const c = dustPalette[Math.floor(Math.random() * dustPalette.length)];
@@ -793,8 +792,8 @@ export default function CosmicJourney() {
       nebulaPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       nebulaPositions[i * 3 + 1] = (r * Math.sin(phi) * Math.sin(theta)) * 0.4; // Flatten
       nebulaPositions[i * 3 + 2] = r * Math.cos(phi);
-      nebulaOpacities[i] = 0.1 + Math.random() * 0.3;
-      nebulaSizes[i] = 30 + Math.random() * 80;
+      nebulaOpacities[i] = 0.03 + Math.random() * 0.08;
+      nebulaSizes[i] = 5 + Math.random() * 15;
       nebulaRotations[i] = Math.random() * Math.PI * 2;
     }
 
@@ -833,7 +832,7 @@ export default function CosmicJourney() {
       starPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       starPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       starPositions[i * 3 + 2] = r * Math.cos(phi);
-      starSizes[i] = 0.5 + Math.random() * 2.0;
+      starSizes[i] = 0.2 + Math.random() * 0.8;
       // Mostly white with occasional color
       if (Math.random() < 0.1) {
         const sc = dustPalette[Math.floor(Math.random() * dustPalette.length)];
@@ -879,13 +878,13 @@ export default function CosmicJourney() {
     envScene.background = new THREE.Color(0x0a0612);
     
     // Add some colored lights to the env scene for reflections
-    const envLight1 = new THREE.PointLight(0x4100ff, 50, 20);
+    const envLight1 = new THREE.PointLight(0x4100ff, 15, 20);
     envLight1.position.set(5, 5, 5);
     envScene.add(envLight1);
-    const envLight2 = new THREE.PointLight(0x00f4ff, 50, 20);
+    const envLight2 = new THREE.PointLight(0x00f4ff, 15, 20);
     envLight2.position.set(-5, -3, -5);
     envScene.add(envLight2);
-    const envLight3 = new THREE.PointLight(0xffc06f, 30, 15);
+    const envLight3 = new THREE.PointLight(0xffc06f, 10, 15);
     envLight3.position.set(0, 5, -3);
     envScene.add(envLight3);
     // Small sphere for env reflection
