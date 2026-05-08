@@ -971,8 +971,8 @@ export default function CosmicJourney() {
         activatedRef.current = true;
       }
     };
-    canvas.addEventListener('click', handleClick);
-    canvas.addEventListener('touchstart', handleClick, { passive: true });
+    window.addEventListener('click', handleClick);
+    window.addEventListener('touchstart', handleClick, { passive: true });
 
     // ─── Animation Loop ─────────────────────────────────────────────
     const clock = new THREE.Clock();
@@ -991,7 +991,7 @@ export default function CosmicJourney() {
 
       // ── Activation transition ──
       if (activatedRef.current && activationRef.current < 1.0) {
-        activationRef.current = Math.min(1.0, activationRef.current + delta * 0.5); // ~2s transition
+        activationRef.current = Math.min(1.0, activationRef.current + delta * 0.65); // ~1.5s transition
       }
       // Auto-activate on scroll (if user scrolls without clicking)
       if (progress > 0.01 && !activatedRef.current) {
@@ -1042,36 +1042,39 @@ export default function CosmicJourney() {
       // ── Orb evolution ──
       const orbBreathScale = 1.0 + Math.sin(time * 0.5) * 0.03;
       
-      // Before activation: wireframe/outline look
-      // After activation: full PBR with evolving properties
-      const orbEmissiveBase = actSmooth * (0.3 + progress * 1.5);
-      (orbMaterial as THREE.MeshPhysicalMaterial).emissiveIntensity = orbEmissiveBase;
-      (orbMaterial as THREE.MeshPhysicalMaterial).opacity = 0.15 + actSmooth * 0.75;
-      // Wireframe-like effect before activation
-      (orbMaterial as THREE.MeshPhysicalMaterial).transmission = 0.95 - actSmooth * 0.25;
+      // ═══ PRE-ACTIVATION: ghostly wireframe outline ═══
+      // ═══ POST-ACTIVATION: dramatic color bleed, full PBR ═══
       
-      // Color evolution through scroll
+      // Orb emissive: nearly zero before → bright after
+      const orbEmissiveBase = actSmooth * actSmooth * (0.8 + progress * 2.0);
+      (orbMaterial as THREE.MeshPhysicalMaterial).emissiveIntensity = orbEmissiveBase;
+      // Opacity: ghostly before → solid after
+      (orbMaterial as THREE.MeshPhysicalMaterial).opacity = 0.04 + actSmooth * 0.86;
+      // High transmission (invisible) before → glass after
+      (orbMaterial as THREE.MeshPhysicalMaterial).transmission = 0.98 - actSmooth * 0.3;
+      
+      // Color evolution through scroll journey
       const orbHue = 0.52 + progress * 0.15; // teal → blue → purple
       const orbSat = 0.5 + progress * 0.3;
-      const orbLum = 0.5 + actSmooth * 0.15;
+      const orbLum = 0.5 + actSmooth * 0.2;
       (orbMaterial as THREE.MeshPhysicalMaterial).emissive.setHSL(orbHue, orbSat, orbLum * 0.4);
-      (orbMaterial as THREE.MeshPhysicalMaterial).color.setHSL(orbHue, 0.4, 0.7 + progress * 0.1);
+      (orbMaterial as THREE.MeshPhysicalMaterial).color.setHSL(orbHue, 0.3 + actSmooth * 0.2, 0.6 + progress * 0.15);
       
-      // Roughness decreases as you scroll (more polished/reflective)
-      (orbMaterial as THREE.MeshPhysicalMaterial).roughness = 0.3 - actSmooth * 0.25 - progress * 0.03;
+      // Roughness: matte before → polished glass after
+      (orbMaterial as THREE.MeshPhysicalMaterial).roughness = 0.6 - actSmooth * 0.55 - progress * 0.03;
       
-      // Scale grows slightly through journey
+      // Scale grows through journey
       const progressScale = 1.0 + progress * 0.3;
       orbMesh.scale.setScalar(orbBreathScale * progressScale);
       orbMesh.rotation.y = time * (0.05 + progress * 0.15);
       orbMesh.rotation.x = Math.sin(time * 0.15) * (0.05 + progress * 0.15);
       
-      // Glow shell — activation drives intensity
+      // Glow shell — invisible before, dramatic after
       glowMaterial.uniforms.uTime.value = time;
       glowMaterial.uniforms.uPhase.value = progress;
-      glowMaterial.uniforms.uFresnelIntensity.value = actSmooth * (1.5 + progress * 2.0);
-      glowMaterial.uniforms.uGlowIntensity.value = actSmooth * (0.3 + progress * 0.8);
-      glowMaterial.uniforms.uDisplacementIntensity.value = 0.02 + progress * 0.08;
+      glowMaterial.uniforms.uFresnelIntensity.value = actSmooth * actSmooth * (2.5 + progress * 3.0);
+      glowMaterial.uniforms.uGlowIntensity.value = actSmooth * actSmooth * (0.6 + progress * 1.2);
+      glowMaterial.uniforms.uDisplacementIntensity.value = actSmooth * (0.03 + progress * 0.1);
       glowMesh.scale.setScalar(orbBreathScale * progressScale);
       glowMesh.rotation.copy(orbMesh.rotation);
       glowMesh.position.copy(orbMesh.position);
@@ -1082,21 +1085,21 @@ export default function CosmicJourney() {
       glowMaterial.uniforms.uGlowColor.value.setHSL(glowHue1, 0.9, 0.6);
       glowMaterial.uniforms.uGlowColor2.value.setHSL(glowHue2, 0.8, 0.5);
       
-      // Core pulse — grows with activation and scroll
-      const corePulse = (0.3 + actSmooth * 0.7) * (0.8 + Math.sin(time * 2) * 0.2);
-      const coreScale = corePulse * (0.15 + progress * 0.15);
+      // Core pulse — invisible before, bright pulsing after
+      const corePulse = actSmooth * (0.8 + Math.sin(time * 2) * 0.2);
+      const coreScale = corePulse * (0.2 + progress * 0.2);
       coreMesh.scale.setScalar(coreScale);
       coreMesh.position.copy(orbMesh.position);
-      (coreMaterial as any).opacity = actSmooth * (0.5 + progress * 0.4);
-      // Core color shifts
+      (coreMaterial as any).opacity = actSmooth * actSmooth * (0.7 + progress * 0.3);
+      // Core color evolves
       const coreColor = new THREE.Color();
-      coreColor.setHSL(0.5 + progress * 0.1, 0.3, 0.9);
+      coreColor.setHSL(0.5 + progress * 0.1, 0.3, 0.85 + actSmooth * 0.1);
       (coreMaterial as THREE.MeshBasicMaterial).color.copy(coreColor);
 
       // ── Ring evolution ──
       rings.forEach((ring, i) => {
-        // Rotation speed increases with scroll
-        const rotSpeed = (0.001 + progress * 0.005 + i * 0.002);
+        // Rotation speed: slow crawl before → fast after activation, faster with scroll
+        const rotSpeed = (0.0005 + actSmooth * 0.003 + progress * 0.006 + i * 0.002);
         ring.rotation.z += rotSpeed * (i % 2 === 0 ? 1 : -1);
         ring.rotation.x += rotSpeed * 0.3 * (i % 2 === 0 ? 1 : -1);
         
@@ -1104,18 +1107,19 @@ export default function CosmicJourney() {
         const ringExpansion = 1.0 + progress * 0.5;
         ring.scale.setScalar(ringExpansion * progressScale);
         
-        // Ring opacity: outlines only before activation, full after
+        // Ring opacity: faint wireframe outlines before → vivid after
         const ringMat = ring.material as THREE.MeshPhysicalMaterial;
-        ringMat.opacity = 0.15 + actSmooth * 0.35 + progress * 0.2;
-        ringMat.emissiveIntensity = actSmooth * (0.4 + progress * 1.2);
+        ringMat.opacity = 0.08 + actSmooth * 0.42 + progress * 0.25;
+        ringMat.emissiveIntensity = actSmooth * actSmooth * (0.8 + progress * 1.5);
         // Ring color evolves
-        ringMat.emissive.setHSL(0.55 + progress * 0.15 + i * 0.05, 0.7, 0.4);
+        ringMat.emissive.setHSL(0.55 + progress * 0.15 + i * 0.05, 0.7, 0.35 + actSmooth * 0.15);
+        ringMat.color.setHSL(0.55 + progress * 0.1 + i * 0.05, 0.3 + actSmooth * 0.5, 0.5 + actSmooth * 0.2);
         
         const bp = (ring as any)._bloomPair;
         if (bp) {
           bp.rotation.copy(ring.rotation);
           bp.scale.copy(ring.scale);
-          (bp.material as THREE.MeshBasicMaterial).opacity = actSmooth * 0.08 + progress * 0.05;
+          (bp.material as THREE.MeshBasicMaterial).opacity = actSmooth * actSmooth * (0.1 + progress * 0.08);
         }
       });
 
@@ -1148,14 +1152,14 @@ export default function CosmicJourney() {
       starMaterial.uniforms.uTime.value = time;
       starPoints.rotation.y = time * 0.003;
 
-      // ── Accent light evolution — intensity grows with scroll ──
-      const lightIntensity = actSmooth * (0.3 + progress * 0.7);
+      // ── Accent light evolution — dark before, dramatic after ──
+      const lightIntensity = actSmooth * actSmooth * (0.5 + progress * 1.0);
       accentLight1.intensity = lightIntensity;
       accentLight2.intensity = lightIntensity;
       accentLight3.intensity = lightIntensity * 0.6;
-      keyLight.intensity = 0.3 + actSmooth * 1.2 + progress * 0.5;
-      rimLight.intensity = actSmooth * (0.5 + progress * 0.8);
-      fillLight.intensity = actSmooth * (0.5 + progress * 0.5);
+      keyLight.intensity = 0.1 + actSmooth * actSmooth * (1.5 + progress * 0.8);
+      rimLight.intensity = actSmooth * actSmooth * (0.8 + progress * 1.0);
+      fillLight.intensity = actSmooth * actSmooth * (0.6 + progress * 0.8);
       
       accentLight1.position.set(
         Math.sin(time * 0.3) * (4 + progress * 2),
@@ -1173,8 +1177,8 @@ export default function CosmicJourney() {
         Math.sin(time * 0.2) * 3
       );
       
-      // ── Bloom intensity scales with activation + scroll progress ──
-      compositeMaterial.uniforms.uBloomStrength.value = 0.05 + actSmooth * (0.3 + progress * 0.3);
+      // ── Bloom intensity: near-zero before → full dramatic after ──
+      compositeMaterial.uniforms.uBloomStrength.value = 0.02 + actSmooth * actSmooth * (0.4 + progress * 0.4);
 
       // ─── Multi-Pass Render Pipeline ───────────────────────────────
 
@@ -1230,8 +1234,8 @@ export default function CosmicJourney() {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('resize', handleResize);
-      canvas.removeEventListener('click', handleClick);
-      canvas.removeEventListener('touchstart', handleClick);
+      window.removeEventListener('click', handleClick);
+      window.removeEventListener('touchstart', handleClick);
       
       // Dispose all
       renderer.dispose();
