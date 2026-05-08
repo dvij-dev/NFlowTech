@@ -118,7 +118,7 @@ void main(){
   // === Limb darkening (subtle — keep edges visible) ===
   col *= (0.55 + f * 0.55);
   // === Emissive boost (star is a light source) ===
-  col *= 1.4;
+  col *= 1.6;
   gl_FragColor = vec4(col, 1.0);
 }
 `
@@ -360,17 +360,17 @@ function createStarSystem(
     const breathe = 1.0 + Math.sin(time * 1.5) * 0.025
     coreMesh.scale.multiplyScalar(breathe)
 
-    // Glow sprite
-    glowMat.opacity = visibility * 0.5
+    // Glow sprite (strong — replaces bloom for glow effect)
+    glowMat.opacity = visibility * 0.7
     glowSprite.scale.setScalar(glowSize * scale * breathe)
 
     // Corona with slow rotation
-    coronaMat.opacity = visibility * 0.55
+    coronaMat.opacity = visibility * 0.65
     coronaSprite.scale.setScalar(coronaSize * scale)
     coronaSprite.material.rotation = time * 0.012
 
     // Light
-    light.intensity = visibility * 5
+    light.intensity = visibility * 8
 
     // Flares
     flares.update(time, visibility)
@@ -423,8 +423,8 @@ function buildScene(canvas: HTMLCanvasElement) {
     sPos[i * 3] = (Math.random() - 0.5) * 250
     sPos[i * 3 + 1] = (Math.random() - 0.5) * 250
     sPos[i * 3 + 2] = -5 - Math.random() * 120
-    sSize[i] = 0.3 + Math.random() * 1.5
-    sAlpha[i] = 0.2 + Math.random() * 0.6
+    sSize[i] = 0.6 + Math.random() * 2.5
+    sAlpha[i] = 0.5 + Math.random() * 0.5
     const temp = 0.7 + Math.random() * 0.3
     sColor[i * 3] = temp
     sColor[i * 3 + 1] = temp
@@ -570,9 +570,9 @@ function buildScene(canvas: HTMLCanvasElement) {
   // THREE STAR SYSTEMS — realistic suns with surface detail
   // ══════════════════════════════════════════════════
   const starSystems = [
-    { sys: createStarSystem(new THREE.Vector3(0, 0, 0), COLORS.cyan, 1.3, 5, 10, scene), activateAt: 0.45 },
-    { sys: createStarSystem(new THREE.Vector3(-9, 3.5, -4), COLORS.magenta, 1.1, 4.5, 8.5, scene), activateAt: 0.60 },
-    { sys: createStarSystem(new THREE.Vector3(8, -2, -5), COLORS.green, 1.0, 4, 8, scene), activateAt: 0.75 },
+    { sys: createStarSystem(new THREE.Vector3(0, 0, 0), COLORS.cyan, 1.3, 7, 14, scene), activateAt: 0.45 },
+    { sys: createStarSystem(new THREE.Vector3(-9, 3.5, -4), COLORS.magenta, 1.1, 6, 12, scene), activateAt: 0.60 },
+    { sys: createStarSystem(new THREE.Vector3(8, -2, -5), COLORS.green, 1.0, 5.5, 11, scene), activateAt: 0.75 },
   ]
 
   // ══════════════════════════════════════════════════
@@ -644,21 +644,21 @@ function buildScene(canvas: HTMLCanvasElement) {
 
     // ── Activation: egg forms (color bleeds) ──
     if (activated && activationT < 1) {
-      activationT = Math.min(1, activationT + dt * 0.35)
+      activationT = Math.min(1, activationT + dt * 0.5)
       const ap = 1 - Math.pow(1 - activationT, 3)
 
       eggCore.visible = true
       eggCore.scale.setScalar(ap)
       eggCoreMat.uniforms.uTime.value = t
 
-      eggGlowMat.opacity = ap * 0.4
+      eggGlowMat.opacity = ap * 0.55
       eggGlow.scale.setScalar(8 * ap)
 
-      eggCoronaMat.opacity = ap * 0.35
+      eggCoronaMat.opacity = ap * 0.45
       eggCorona.scale.setScalar(12 * ap)
       eggCorona.material.rotation = t * 0.015
 
-      eggLight.intensity = ap * 3
+      eggLight.intensity = ap * 5
     }
 
     // ── Scroll Journey ──
