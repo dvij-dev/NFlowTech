@@ -29,13 +29,14 @@ const CONTENT_BLOCKS: ContentBlock[] = [
     content: (
       <div className="text-center">
         <h1 className="text-6xl md:text-8xl font-light tracking-tight text-white mb-6"
-            style={{ fontFamily: "'Inter', sans-serif", letterSpacing: '-0.04em' }}>
+            style={{ fontFamily: "'Inter', sans-serif", letterSpacing: '-0.04em', textShadow: '0 0 40px rgba(0,0,0,0.8), 0 0 80px rgba(0,0,0,0.5)' }}>
           <span className="block opacity-90">NFlow</span>
           <span className="block text-3xl md:text-4xl font-extralight tracking-widest text-sky-300/80 mt-2">
             TECHNOLOGIES
           </span>
         </h1>
-        <p className="text-lg md:text-xl text-white/50 font-light max-w-md mx-auto mt-8">
+        <p className="text-lg md:text-xl text-white/50 font-light max-w-md mx-auto mt-8"
+           style={{ textShadow: '0 0 30px rgba(0,0,0,0.8)' }}>
           Performance marketing that transforms brands
         </p>
         <div className="mt-12 flex items-center justify-center gap-2 text-white/30 text-sm">
@@ -267,7 +268,7 @@ export default function ScrollSections() {
           if (opacity < 0.01) return null;
 
           const positionClasses = {
-            center: 'items-center justify-center px-8',
+            center: 'items-start justify-center pt-[12vh] px-8',
             left: 'items-center justify-start pl-8 md:pl-24',
             right: 'items-center justify-end pr-8 md:pr-24',
           }[block.position || 'center'];
