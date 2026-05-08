@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { services, siteConfig } from '@/data/site-data'
 import { AnimatedSection } from '@/components/AnimatedSection'
 import { SectionLabel } from '@/components/SectionLabel'
+import { Breadcrumb } from '@/components/Breadcrumb'
 
 export default function ServicesPage() {
   return (

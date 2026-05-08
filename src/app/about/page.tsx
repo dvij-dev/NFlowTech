@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { siteConfig, founder, teamMembers, values, timeline, certifications } from '@/data/site-data'
 import { AnimatedSection } from '@/components/AnimatedSection'
 import { SectionLabel } from '@/components/SectionLabel'
+import { Breadcrumb } from '@/components/Breadcrumb'
 
 export default function AboutPage() {
   return (

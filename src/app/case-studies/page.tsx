@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { caseStudies } from '@/data/site-data'
 import { AnimatedSection } from '@/components/AnimatedSection'
 import { SectionLabel } from '@/components/SectionLabel'
+import { Breadcrumb } from '@/components/Breadcrumb'
 
 const filters = ['All', 'SEO', 'PPC', 'Google Ads', 'Social Ads', '360° Marketing']
 
