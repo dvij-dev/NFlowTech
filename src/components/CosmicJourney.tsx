@@ -437,7 +437,7 @@ export default function CosmicJourney() {
 
     // ─── Scenes ─────────────────────────────────────────────────────
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x0a0612, 0.04);
+    scene.fog = new THREE.FogExp2(0x0a0612, 0.015);
 
     // Bloom scene (objects that should glow)
     const bloomScene = new THREE.Scene();
@@ -473,7 +473,7 @@ export default function CosmicJourney() {
       uniforms: {
         tScene: { value: sceneRT.texture },
         tBloom: { value: bloomRT2.texture },
-        uBloomStrength: { value: 0.45 },
+        uBloomStrength: { value: 0.35 },
         uTint: { value: new THREE.Vector3(0.6, 0.4, 1.0) },
         uTintStrength: { value: 0.06 },
         uVignetteIntensity: { value: 0.35 },
@@ -575,7 +575,7 @@ export default function CosmicJourney() {
     bloomScene.add(bloomRim2);
 
     // ─── Cosmic Egg / Orb ───────────────────────────────────────────
-    const orbGeometry = new THREE.SphereGeometry(1.2, 128, 128);
+    const orbGeometry = new THREE.SphereGeometry(0.7, 128, 128);
     
     // Main orb (PBR)
     const orbMaterial = new THREE.MeshPhysicalMaterial({
@@ -600,7 +600,7 @@ export default function CosmicJourney() {
     scene.add(orbMesh);
 
     // Orb glow shell (bloom layer — ShaderMaterial)
-    const glowGeometry = new THREE.SphereGeometry(1.35, 64, 64);
+    const glowGeometry = new THREE.SphereGeometry(0.82, 64, 64);
     const glowMaterial = new THREE.ShaderMaterial({
       vertexShader: orbVertexShader,
       fragmentShader: orbFragmentShader,
@@ -627,7 +627,7 @@ export default function CosmicJourney() {
     bloomScene.add(glowMesh);
 
     // Inner light orb (small bright core)
-    const coreGeometry = new THREE.SphereGeometry(0.3, 32, 32);
+    const coreGeometry = new THREE.SphereGeometry(0.15, 32, 32);
     const coreMaterial = new THREE.MeshBasicMaterial({
       color: 0xccffff,
       transparent: true,
@@ -640,7 +640,7 @@ export default function CosmicJourney() {
     const ringCount = 3;
     const rings: THREE.Mesh[] = [];
     for (let i = 0; i < ringCount; i++) {
-      const ringGeo = new THREE.TorusGeometry(1.8 + i * 0.4, 0.015, 16, 100);
+      const ringGeo = new THREE.TorusGeometry(1.1 + i * 0.25, 0.008, 16, 100);
       const ringMat = new THREE.MeshPhysicalMaterial({
         color: 0x88ccff,
         metalness: 0.8,
@@ -975,7 +975,7 @@ export default function CosmicJourney() {
       const colors = getPhaseColors(progress);
       compositeMaterial.uniforms.uTint.value.set(...colors.tint);
       compositeMaterial.uniforms.uVignetteIntensity.value = colors.vignetteIntensity;
-      scene.fog = new THREE.FogExp2(colors.bg.getHex(), 0.04);
+      scene.fog = new THREE.FogExp2(colors.bg.getHex(), 0.015);
 
       // ── Orb animation ──
       const orbScale = 1.0 + Math.sin(time * 0.5) * 0.03;
