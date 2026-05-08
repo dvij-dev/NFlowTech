@@ -189,8 +189,8 @@ void main() {
   vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
   
   // Size attenuation
-  gl_PointSize = aSize * (80.0 / -mvPosition.z);
-  gl_PointSize = clamp(gl_PointSize, 0.5, 6.0);
+  gl_PointSize = aSize * (20.0 / -mvPosition.z);
+  gl_PointSize = clamp(gl_PointSize, 0.5, 3.0);
   
   gl_Position = projectionMatrix * mvPosition;
   
@@ -228,8 +228,8 @@ void main() {
   vRotation = aRotation + uTime * 0.05;
   
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-  gl_PointSize = aSize * (60.0 / -mvPosition.z);
-  gl_PointSize = clamp(gl_PointSize, 1.0, 30.0);
+  gl_PointSize = aSize * (15.0 / -mvPosition.z);
+  gl_PointSize = clamp(gl_PointSize, 1.0, 10.0);
   gl_Position = projectionMatrix * mvPosition;
 }
 `;
@@ -667,7 +667,7 @@ export default function CosmicJourney() {
     }
 
     // ─── Floating Crystal Shards ────────────────────────────────────
-    const shardCount = 24;
+    const shardCount = 12;
     const shards: THREE.Mesh[] = [];
     const shardGroup = new THREE.Group();
     scene.add(shardGroup);
@@ -692,7 +692,7 @@ export default function CosmicJourney() {
       // Random position in shell around orb
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
-      const r = 2.0 + Math.random() * 3.0;
+      const r = 3.0 + Math.random() * 5.0;
       shard.position.set(
         r * Math.sin(phi) * Math.cos(theta),
         r * Math.sin(phi) * Math.sin(theta),
@@ -720,7 +720,7 @@ export default function CosmicJourney() {
     }
 
     // ─── Dust Particles ─────────────────────────────────────────────
-    const dustCount = 3000;
+    const dustCount = 800;
     const dustPositions = new Float32Array(dustCount * 3);
     const dustSizes = new Float32Array(dustCount);
     const dustSpeeds = new Float32Array(dustCount);
@@ -737,13 +737,13 @@ export default function CosmicJourney() {
     ];
 
     for (let i = 0; i < dustCount; i++) {
-      const r = 1.5 + Math.random() * 15;
+      const r = 8 + Math.random() * 25;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
       dustPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       dustPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       dustPositions[i * 3 + 2] = r * Math.cos(phi);
-      dustSizes[i] = 0.3 + Math.random() * 1.2;
+      dustSizes[i] = 0.2 + Math.random() * 0.5;
       dustSpeeds[i] = 0.1 + Math.random() * 0.4;
       dustPhases[i] = Math.random() * Math.PI * 2;
       const c = dustPalette[Math.floor(Math.random() * dustPalette.length)];
@@ -774,26 +774,24 @@ export default function CosmicJourney() {
     const dustPoints = new THREE.Points(dustGeometry, dustMaterial);
     scene.add(dustPoints);
     
-    // Bloom dust (subset, brighter)
-    const bloomDustPoints = new THREE.Points(dustGeometry.clone(), dustMaterial.clone());
-    bloomScene.add(bloomDustPoints);
+    // No bloom dust — keep particles clean, only orb/rings/shards bloom
 
     // ─── Nebula Clouds ──────────────────────────────────────────────
-    const nebulaCount = 80;
+    const nebulaCount = 15;
     const nebulaPositions = new Float32Array(nebulaCount * 3);
     const nebulaOpacities = new Float32Array(nebulaCount);
     const nebulaSizes = new Float32Array(nebulaCount);
     const nebulaRotations = new Float32Array(nebulaCount);
 
     for (let i = 0; i < nebulaCount; i++) {
-      const r = 3 + Math.random() * 12;
+      const r = 15 + Math.random() * 20;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
       nebulaPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       nebulaPositions[i * 3 + 1] = (r * Math.sin(phi) * Math.sin(theta)) * 0.4; // Flatten
       nebulaPositions[i * 3 + 2] = r * Math.cos(phi);
-      nebulaOpacities[i] = 0.03 + Math.random() * 0.08;
-      nebulaSizes[i] = 5 + Math.random() * 15;
+      nebulaOpacities[i] = 0.01 + Math.random() * 0.03;
+      nebulaSizes[i] = 2 + Math.random() * 4;
       nebulaRotations[i] = Math.random() * Math.PI * 2;
     }
 
