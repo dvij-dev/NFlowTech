@@ -1,11 +1,31 @@
 'use client'
 
+import { useState } from 'react'
 import { siteConfig } from '@/data/site-data'
 import { AnimatedSection } from '@/components/AnimatedSection'
 import { SectionLabel } from '@/components/SectionLabel'
 import { Breadcrumb } from '@/components/Breadcrumb'
 
 export default function ContactPage() {
+  const [submitted, setSubmitted] = useState(false)
+  
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const form = e.currentTarget
+    const data = new FormData(form)
+    const subject = encodeURIComponent('New Inquiry from ' + data.get('fname') + ' ' + data.get('lname'))
+    const body = encodeURIComponent(
+      'Name: ' + data.get('fname') + ' ' + data.get('lname') + '\n' +
+      'Email: ' + data.get('email') + '\n' +
+      'Phone: ' + data.get('phone') + '\n' +
+      'Website: ' + data.get('website') + '\n' +
+      'Industry: ' + data.get('industry') + '\n\n' +
+      'Message:\n' + data.get('message')
+    )
+    window.open('mailto:' + siteConfig.email + '?subject=' + subject + '&body=' + body)
+    setSubmitted(true)
+  }
+
   return (
     <>
       {/* Hero */}
@@ -86,14 +106,14 @@ export default function ContactPage() {
           <AnimatedSection direction="left" className="lg:col-span-3">
             <div className="glass-card p-8 md:p-10">
               <h3 className="text-xl font-bold text-white mb-6">Send us a message</h3>
-              <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+              <form className="space-y-5" onSubmit={handleSubmit}>
                 <div className="grid sm:grid-cols-2 gap-5">
                   <div>
                     <label htmlFor="fname" className="block text-sm text-slate-400 mb-2">First Name*</label>
                     <input
                       type="text"
                       className="w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/20 transition-colors"
-                      id="fname" placeholder="John"
+                      id="fname" name="fname" placeholder="John"
                     />
                   </div>
                   <div>
@@ -101,7 +121,7 @@ export default function ContactPage() {
                     <input
                       type="text"
                       className="w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/20 transition-colors"
-                      id="lname" placeholder="Doe"
+                      id="lname" name="lname" placeholder="Doe"
                     />
                   </div>
                 </div>
@@ -110,7 +130,7 @@ export default function ContactPage() {
                   <input
                     type="email"
                     className="w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/20 transition-colors"
-                    id="email" placeholder="john@example.com"
+                    id="email" name="email" placeholder="john@example.com"
                   />
                 </div>
                 <div className="grid sm:grid-cols-2 gap-5">
@@ -119,7 +139,7 @@ export default function ContactPage() {
                     <input
                       type="tel"
                       className="w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/20 transition-colors"
-                      id="phone" placeholder="+1 (234) 567-8900"
+                      id="phone" name="phone" placeholder="+1 (234) 567-8900"
                     />
                   </div>
                   <div>
@@ -127,7 +147,7 @@ export default function ContactPage() {
                     <input
                       type="url"
                       className="w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/20 transition-colors"
-                      id="website" placeholder="https://example.com"
+                      id="website" name="website" placeholder="https://example.com"
                     />
                   </div>
                 </div>
@@ -136,7 +156,7 @@ export default function ContactPage() {
                   <input
                     type="text"
                     className="w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/20 transition-colors"
-                    id="industry" placeholder="E-commerce, SaaS, Healthcare..."
+                    id="industry" name="industry" placeholder="E-commerce, SaaS, Healthcare..."
                   />
                 </div>
                 <div>
@@ -144,7 +164,7 @@ export default function ContactPage() {
                   <textarea
                     rows={5}
                     className="w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/20 transition-colors resize-none"
-                    id="message" placeholder="Tell us about your project..."
+                    id="message" name="message" placeholder="Tell us about your project..."
                   />
                 </div>
                 <button type="submit" className="btn-primary w-full justify-center">
@@ -152,6 +172,12 @@ export default function ContactPage() {
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                 </button>
               </form>
+              {submitted && (
+                <div className="mt-6 p-6 glass-card text-center">
+                  <p className="text-lg text-sky-400 font-medium mb-2">✓ Opening your email client</p>
+                  <p className="text-sm text-slate-400">If it didn&apos;t open, email us directly at <a href={'mailto:' + siteConfig.email} className="text-sky-400 hover:underline">{siteConfig.email}</a></p>
+                </div>
+              )}
             </div>
           </AnimatedSection>
         </div>

@@ -834,6 +834,14 @@ export default function BigBangJourney() {
     setTimeout(() => setPhase('journey'), 3000)
   }, [phase])
 
+  // Auto-start after 5 seconds if user hasn't clicked
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (phase === 'idle') handleActivate()
+    }, 5000)
+    return () => clearTimeout(timer)
+  }, [phase, handleActivate])
+
   useEffect(() => {
     if (phase !== 'journey') return
     const container = containerRef.current
