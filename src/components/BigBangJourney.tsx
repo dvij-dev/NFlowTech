@@ -12,25 +12,24 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 gsap.registerPlugin(ScrollTrigger)
 
 /* ═══════════════════════════════════════════════════════════════
- * NFLOW COSMIC JOURNEY — V7 (Cinematic Three.js + Post-Processing)
+ * NFLOW COSMIC JOURNEY V8 — Guaranteed-Visible Materials
  * 
- * Inspired by hatom.com's approach: 
- *   Bloom post-processing, custom shader materials, rich particle
- *   systems, dramatic camera moves, scroll-driven narrative.
- *
+ * Key difference: ALL objects use MeshBasicMaterial (no custom 
+ * shaders for meshes) ensuring they render on every GPU.
+ * Custom shaders ONLY for particle Points (proven working).
+ * 
  * SEQUENCE:
- *   LOAD → Dark space. Twinkling stars. "Click to begin" CTA.
- *   CLICK → Color energy bleeds from center. Cosmic egg forms with glow.
- *   SCROLL 0.00–0.15 → Egg pulses with internal energy. Bloom intensifies.
- *   SCROLL 0.15–0.30 → Cracks appear as shell fragments. Light escapes.
- *   SCROLL 0.30–0.45 → THE BANG. Massive particle explosion + bloom flash.
- *   SCROLL 0.45–0.60 → Nebula settles. Star 1 ignites (PPC — cyan).
- *   SCROLL 0.60–0.75 → Star 2 born (Social — magenta). Binary system.
- *   SCROLL 0.75–0.90 → Star 3 emerges (Organic — green). Triple system.
- *   SCROLL 0.90–1.00 → Full universe. Stats. Camera pulls wide.
+ *   IDLE   → Dark space, subtle stars, "Click to begin" CTA
+ *   CLICK  → Color energy bleeds from center, cosmic egg forms
+ *   0.00–0.15 → Egg pulses, energy builds, bloom intensifies
+ *   0.15–0.30 → Cracks: shell fragments emerge, light escapes
+ *   0.30–0.45 → THE BANG: explosion, particles fly, bloom flash
+ *   0.45–0.60 → Nebula settles, Star 1 (PPC/cyan) ignites
+ *   0.60–0.75 → Star 2 (Social/magenta) born, binary orbit
+ *   0.75–0.90 → Star 3 (Organic/green) emerges, triple system
+ *   0.90–1.00 → Full universe, stats, camera pulls wide
  * ═══════════════════════════════════════════════════════════════ */
 
-// ─── Color Palette ─────────────────────────────────
 const COLORS = {
   bg: 0x020208,
   cyan: 0x00D4FF,
@@ -38,167 +37,57 @@ const COLORS = {
   green: 0x00E676,
   gold: 0xFFD700,
   warm: 0xffc06f,
-  eggShell: 0xc8dce8,
   white: 0xffffff,
 }
 
-// ─── Shader: Cosmic Egg (fresnel + inner glow + displacement) ───
-const eggVertexShader = `
-  varying vec3 vNormal;
-  varying vec3 vViewPosition;
-  varying vec2 vUv;
-  uniform float uTime;
-  uniform float uDisplacement;
-  
-  // Simplex noise approximation
-  vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
-  vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
-  
-  float snoise(vec3 v) {
-    const vec2 C = vec2(1.0/6.0, 1.0/3.0);
-    const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
-    vec3 i = floor(v + dot(v, C.yyy));
-    vec3 x0 = v - i + dot(i, C.xxx);
-    vec3 g = step(x0.yzx, x0.xyz);
-    vec3 l = 1.0 - g;
-    vec3 i1 = min(g.xyz, l.zxy);
-    vec3 i2 = max(g.xyz, l.zxy);
-    vec3 x1 = x0 - i1 + C.xxx;
-    vec3 x2 = x0 - i2 + C.yyy;
-    vec3 x3 = x0 - D.yyy;
-    i = mod289(i);
-    vec4 p = permute(permute(permute(
-      i.z + vec4(0.0, i1.z, i2.z, 1.0))
-      + i.y + vec4(0.0, i1.y, i2.y, 1.0))
-      + i.x + vec4(0.0, i1.x, i2.x, 1.0));
-    float n_ = 0.142857142857;
-    vec3 ns = n_ * D.wyz - D.xzx;
-    vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
-    vec4 x_ = floor(j * ns.z);
-    vec4 y_ = floor(j - 7.0 * x_);
-    vec4 x = x_ * ns.x + ns.yyyy;
-    vec4 y = y_ * ns.x + ns.yyyy;
-    vec4 h = 1.0 - abs(x) - abs(y);
-    vec4 b0 = vec4(x.xy, y.xy);
-    vec4 b1 = vec4(x.zw, y.zw);
-    vec4 s0 = floor(b0)*2.0 + 1.0;
-    vec4 s1 = floor(b1)*2.0 + 1.0;
-    vec4 sh = -step(h, vec4(0.0));
-    vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
-    vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
-    vec3 p0 = vec3(a0.xy,h.x);
-    vec3 p1 = vec3(a0.zw,h.y);
-    vec3 p2 = vec3(a1.xy,h.z);
-    vec3 p3 = vec3(a1.zw,h.w);
-    vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
-    p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
-    vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-    m = m * m;
-    return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
-  }
-  
-  void main() {
-    vUv = uv;
-    vNormal = normalize(normalMatrix * normal);
-    
-    float noise = snoise(position * 3.0 + uTime * 0.5) * uDisplacement;
-    vec3 newPosition = position + normal * noise;
-    
-    vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0);
-    vViewPosition = -mvPosition.xyz;
-    gl_Position = projectionMatrix * mvPosition;
-  }
-`
-
-const eggFragmentShader = `
-  varying vec3 vNormal;
-  varying vec3 vViewPosition;
-  varying vec2 vUv;
-  uniform float uTime;
-  uniform float uEnergy;
-  uniform vec3 uGlowColor;
-  uniform vec3 uShellColor;
-  
-  void main() {
-    vec3 viewDir = normalize(vViewPosition);
-    float fresnel = pow(1.0 - abs(dot(viewDir, vNormal)), 2.5);
-    
-    // Animated inner glow
-    float pulse = 0.5 + 0.5 * sin(uTime * 2.0 + vUv.y * 6.0);
-    vec3 innerGlow = uGlowColor * fresnel * (1.0 + uEnergy * 2.0) * (0.5 + pulse * 0.5);
-    
-    // Shell surface
-    vec3 shell = uShellColor * (0.15 + fresnel * 0.3);
-    
-    // Mix based on energy
-    vec3 color = mix(shell, innerGlow, uEnergy * 0.7 + fresnel * 0.3);
-    
-    // Add bright rim
-    float rim = pow(fresnel, 1.5);
-    color += vec3(1.0, 0.95, 0.8) * rim * uEnergy * 1.5;
-    
-    float alpha = 0.3 + fresnel * 0.7;
-    gl_FragColor = vec4(color, alpha);
-  }
-`
-
-// ─── Shader: Star glow (volumetric-style) ──────────
-const starGlowVertexShader = `
-  varying vec3 vNormal;
-  varying vec3 vViewPosition;
-  void main() {
-    vNormal = normalize(normalMatrix * normal);
-    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-    vViewPosition = -mvPosition.xyz;
-    gl_Position = projectionMatrix * mvPosition;
-  }
-`
-
-const starGlowFragmentShader = `
-  varying vec3 vNormal;
-  varying vec3 vViewPosition;
-  uniform vec3 uColor;
-  uniform float uIntensity;
-  
-  void main() {
-    vec3 viewDir = normalize(vViewPosition);
-    float fresnel = pow(1.0 - abs(dot(viewDir, vNormal)), 3.0);
-    vec3 glow = uColor * fresnel * uIntensity;
-    float alpha = fresnel * 0.8;
-    gl_FragColor = vec4(glow, alpha);
-  }
-`
-
-// ─── Shader: Nebula particles ──────────────────────
-const nebulaVertexShader = `
+// ─── Particle shader (proven working from V7 starfield) ───
+const particleVert = `
   attribute float aSize;
   attribute vec3 aColor;
   attribute float aAlpha;
   varying vec3 vColor;
   varying float vAlpha;
-  
   void main() {
     vColor = aColor;
     vAlpha = aAlpha;
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-    gl_PointSize = aSize * (200.0 / -mvPosition.z);
+    gl_PointSize = aSize * (300.0 / -mvPosition.z);
     gl_Position = projectionMatrix * mvPosition;
   }
 `
-
-const nebulaFragmentShader = `
+const particleFrag = `
   varying vec3 vColor;
   varying float vAlpha;
-  
   void main() {
     float dist = length(gl_PointCoord - vec2(0.5));
     if (dist > 0.5) discard;
-    float alpha = smoothstep(0.5, 0.0, dist) * vAlpha;
-    gl_FragColor = vec4(vColor, alpha);
+    float alpha = smoothstep(0.5, 0.05, dist) * vAlpha;
+    gl_FragColor = vec4(vColor * 1.5, alpha);
   }
 `
+
+// ═══════════════════════════════════════════════════
+// Helper: create a glow sprite (bright billboard quad)
+// ═══════════════════════════════════════════════════
+function createGlowSprite(color: number, size: number): THREE.Sprite {
+  const canvas = document.createElement('canvas')
+  canvas.width = 256
+  canvas.height = 256
+  const ctx = canvas.getContext('2d')!
+  const c = new THREE.Color(color)
+  const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128)
+  gradient.addColorStop(0, `rgba(${Math.floor(c.r*255)},${Math.floor(c.g*255)},${Math.floor(c.b*255)},1)`)
+  gradient.addColorStop(0.3, `rgba(${Math.floor(c.r*255)},${Math.floor(c.g*255)},${Math.floor(c.b*255)},0.6)`)
+  gradient.addColorStop(0.7, `rgba(${Math.floor(c.r*255)},${Math.floor(c.g*255)},${Math.floor(c.b*255)},0.15)`)
+  gradient.addColorStop(1, `rgba(0,0,0,0)`)
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, 256, 256)
+  const tex = new THREE.CanvasTexture(canvas)
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })
+  const sprite = new THREE.Sprite(mat)
+  sprite.scale.set(size, size, 1)
+  return sprite
+}
 
 // ═══════════════════════════════════════════════════
 // Scene Builder
@@ -206,165 +95,111 @@ const nebulaFragmentShader = `
 function buildScene(canvas: HTMLCanvasElement) {
   const W = window.innerWidth
   const H = window.innerHeight
-  const DPR = Math.min(window.devicePixelRatio, 2)
 
   // ── Renderer ──
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
-  renderer.setPixelRatio(DPR)
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false })
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.setSize(W, H)
   renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.0
+  renderer.toneMappingExposure = 1.2
+  renderer.setClearColor(COLORS.bg, 1)
 
-  // ── Scene ──
+  // ── Scene + Camera ──
   const scene = new THREE.Scene()
-  scene.background = new THREE.Color(COLORS.bg)
+  const camera = new THREE.PerspectiveCamera(60, W / H, 0.1, 1000)
+  camera.position.set(0, 0, 12)
 
-  // ── Camera ──
-  const camera = new THREE.PerspectiveCamera(60, W / H, 0.1, 500)
-  camera.position.set(0, 0, 8)
-
-  // ── Post-Processing (like hatom: bloom + output) ──
+  // ── Post-Processing ──
   const composer = new EffectComposer(renderer)
-  const renderPass = new RenderPass(scene, camera)
-  composer.addPass(renderPass)
-
-  const bloomPass = new UnrealBloomPass(
-    new THREE.Vector2(W, H),
-    1.3,   // strength (hatom uses 1.3)
-    0.5,   // radius (hatom uses 0.5)
-    0.15   // threshold (hatom uses 0.15)
-  )
+  composer.addPass(new RenderPass(scene, camera))
+  const bloomPass = new UnrealBloomPass(new THREE.Vector2(W, H), 1.0, 0.4, 0.2)
   composer.addPass(bloomPass)
-
-  const outputPass = new OutputPass()
-  composer.addPass(outputPass)
-
-  // ── Ambient light ──
-  scene.add(new THREE.AmbientLight(0xffffff, 0.08))
+  composer.addPass(new OutputPass())
 
   // ══════════════════════════════════════════════════
-  // STAR FIELD (2500 twinkling points)
+  // STARFIELD — 1500 points (proven working)
   // ══════════════════════════════════════════════════
-  const STAR_COUNT = 2000
-  const starPositions = new Float32Array(STAR_COUNT * 3)
-  const starSizes = new Float32Array(STAR_COUNT)
-  const starAlphas = new Float32Array(STAR_COUNT)
-  const starColors = new Float32Array(STAR_COUNT * 3)
-  const starPhases = new Float32Array(STAR_COUNT)
+  const STAR_N = 1500
+  const sPos = new Float32Array(STAR_N * 3)
+  const sSize = new Float32Array(STAR_N)
+  const sColor = new Float32Array(STAR_N * 3)
+  const sAlpha = new Float32Array(STAR_N)
+  const sPhase = new Float32Array(STAR_N) // for twinkling
 
-  for (let i = 0; i < STAR_COUNT; i++) {
-    // Push stars far back so they're small and subtle
-    starPositions[i * 3] = (Math.random() - 0.5) * 400
-    starPositions[i * 3 + 1] = (Math.random() - 0.5) * 400
-    starPositions[i * 3 + 2] = -30 - Math.random() * 200
-    starSizes[i] = 0.2 + Math.random() * 0.6  // Much smaller — subtle pinpoints
-    starAlphas[i] = 0.2 + Math.random() * 0.4  // Dimmer
-    const temp = 0.8 + Math.random() * 0.2
-    starColors[i * 3] = temp
-    starColors[i * 3 + 1] = temp
-    starColors[i * 3 + 2] = 0.9 + Math.random() * 0.1
-    starPhases[i] = Math.random() * Math.PI * 2
+  for (let i = 0; i < STAR_N; i++) {
+    sPos[i*3]   = (Math.random() - 0.5) * 200
+    sPos[i*3+1] = (Math.random() - 0.5) * 200
+    sPos[i*3+2] = -10 - Math.random() * 100
+    sSize[i] = 0.3 + Math.random() * 1.2
+    sAlpha[i] = 0.3 + Math.random() * 0.5
+    const t = 0.8 + Math.random() * 0.2
+    sColor[i*3] = t; sColor[i*3+1] = t; sColor[i*3+2] = 0.9 + Math.random() * 0.1
+    sPhase[i] = Math.random() * Math.PI * 2
   }
 
   const starGeo = new THREE.BufferGeometry()
-  starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3))
-  starGeo.setAttribute('aSize', new THREE.BufferAttribute(starSizes, 1))
-  starGeo.setAttribute('aColor', new THREE.BufferAttribute(starColors, 3))
-  starGeo.setAttribute('aAlpha', new THREE.BufferAttribute(starAlphas, 1))
+  starGeo.setAttribute('position', new THREE.BufferAttribute(sPos, 3))
+  starGeo.setAttribute('aSize', new THREE.BufferAttribute(sSize, 1))
+  starGeo.setAttribute('aColor', new THREE.BufferAttribute(sColor, 3))
+  starGeo.setAttribute('aAlpha', new THREE.BufferAttribute(sAlpha, 1))
 
-  const starMaterial = new THREE.ShaderMaterial({
-    vertexShader: nebulaVertexShader,
-    fragmentShader: nebulaFragmentShader,
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
+  const starMat = new THREE.ShaderMaterial({
+    vertexShader: particleVert, fragmentShader: particleFrag,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
   })
-  const starField = new THREE.Points(starGeo, starMaterial)
+  const starField = new THREE.Points(starGeo, starMat)
   scene.add(starField)
 
   // ══════════════════════════════════════════════════
-  // COSMIC EGG (custom shader material)
+  // COSMIC EGG — MeshBasicMaterial (guaranteed visible)
   // ══════════════════════════════════════════════════
-  const eggGeo = new THREE.SphereGeometry(3.5, 128, 128)  // Much larger egg
-  const eggMat = new THREE.ShaderMaterial({
-    vertexShader: eggVertexShader,
-    fragmentShader: eggFragmentShader,
-    uniforms: {
-      uTime: { value: 0 },
-      uEnergy: { value: 0 },
-      uDisplacement: { value: 0 },
-      uGlowColor: { value: new THREE.Color(COLORS.cyan) },
-      uShellColor: { value: new THREE.Color(COLORS.eggShell) },
-    },
+  // Outer shell: translucent sphere
+  const eggShellGeo = new THREE.SphereGeometry(2.5, 64, 64)
+  const eggShellMat = new THREE.MeshBasicMaterial({
+    color: 0x88ccdd,
     transparent: true,
-    side: THREE.DoubleSide,
-    depthWrite: false,
+    opacity: 0,
+    side: THREE.FrontSide,
   })
-  const eggMesh = new THREE.Mesh(eggGeo, eggMat)
-  eggMesh.visible = false
-  scene.add(eggMesh)
+  const eggShell = new THREE.Mesh(eggShellGeo, eggShellMat)
+  scene.add(eggShell)
 
-  // Egg inner core (solid bright glow)
-  const coreGeo = new THREE.SphereGeometry(1.8, 32, 32)
-  const coreMat = new THREE.MeshBasicMaterial({
+  // Inner core: bright glowing sphere
+  const eggCoreGeo = new THREE.SphereGeometry(1.2, 32, 32)
+  const eggCoreMat = new THREE.MeshBasicMaterial({
     color: COLORS.cyan,
     transparent: true,
     opacity: 0,
   })
-  const coreMesh = new THREE.Mesh(coreGeo, coreMat)
-  scene.add(coreMesh)
+  const eggCore = new THREE.Mesh(eggCoreGeo, eggCoreMat)
+  scene.add(eggCore)
 
-  // Egg outer glow halo
-  const haloGeo = new THREE.SphereGeometry(6.0, 32, 32)
-  const haloMat = new THREE.ShaderMaterial({
-    vertexShader: starGlowVertexShader,
-    fragmentShader: starGlowFragmentShader,
-    uniforms: {
-      uColor: { value: new THREE.Color(COLORS.cyan) },
-      uIntensity: { value: 0 },
-    },
-    transparent: true,
-    side: THREE.BackSide,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  })
-  const haloMesh = new THREE.Mesh(haloGeo, haloMat)
-  scene.add(haloMesh)
+  // Glow sprite behind egg
+  const eggGlow = createGlowSprite(COLORS.cyan, 12)
+  eggGlow.material.opacity = 0
+  scene.add(eggGlow)
 
-  // Egg point light
-  const eggLight = new THREE.PointLight(COLORS.cyan, 0, 30)
+  // Point light from egg
+  const eggLight = new THREE.PointLight(COLORS.cyan, 0, 40)
   scene.add(eggLight)
 
   // ══════════════════════════════════════════════════
-  // SHELL FRAGMENTS (shaped shards, not boxes)
+  // SHELL FRAGMENTS — visible shards
   // ══════════════════════════════════════════════════
-  const FRAG_COUNT = 40
+  const FRAG_N = 30
   const fragGroup = new THREE.Group()
-  const fragData: { dir: THREE.Vector3; rotAxis: THREE.Vector3; speed: number }[] = []
+  fragGroup.visible = false
+  const fragData: { dir: THREE.Vector3; rot: THREE.Vector3; speed: number }[] = []
 
-  for (let i = 0; i < FRAG_COUNT; i++) {
-    // Create shard-like geometry — big enough to see
-    const w = 0.4 + Math.random() * 0.8
-    const h = 0.3 + Math.random() * 0.6
-    const d = 0.05 + Math.random() * 0.1
-    const geo = new THREE.BoxGeometry(w, h, d)
-    // Skew vertices to make shard-like shapes
-    const posAttr = geo.attributes.position
-    for (let j = 0; j < posAttr.count; j++) {
-      const x = posAttr.getX(j)
-      const y = posAttr.getY(j)
-      posAttr.setX(j, x + y * (Math.random() - 0.5) * 0.3)
-    }
-    posAttr.needsUpdate = true
-
-    const mat = new THREE.MeshStandardMaterial({
-      color: COLORS.eggShell,
-      emissive: COLORS.cyan,
-      emissiveIntensity: 0.3,
+  for (let i = 0; i < FRAG_N; i++) {
+    const w = 0.3 + Math.random() * 0.6
+    const h = 0.2 + Math.random() * 0.5
+    const geo = new THREE.PlaneGeometry(w, h)
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0xaaddee,
       transparent: true,
       opacity: 0,
-      roughness: 0.4,
-      metalness: 0.1,
+      side: THREE.DoubleSide,
     })
     const mesh = new THREE.Mesh(geo, mat)
     fragGroup.add(mesh)
@@ -377,536 +212,483 @@ function buildScene(canvas: HTMLCanvasElement) {
         Math.sin(phi) * Math.sin(theta),
         Math.cos(phi)
       ),
-      rotAxis: new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize(),
-      speed: 0.5 + Math.random() * 2,
+      rot: new THREE.Vector3(Math.random() * 4 - 2, Math.random() * 4 - 2, Math.random() * 4 - 2),
+      speed: 1 + Math.random() * 3,
     })
   }
-  fragGroup.visible = false
   scene.add(fragGroup)
 
   // ══════════════════════════════════════════════════
-  // EXPLOSION PARTICLES (5000 for dramatic impact)
+  // EXPLOSION PARTICLES — 4000 bright points
   // ══════════════════════════════════════════════════
-  const PARTICLE_COUNT = 5000
-  const pPositions = new Float32Array(PARTICLE_COUNT * 3)
-  const pSizes = new Float32Array(PARTICLE_COUNT)
-  const pColors = new Float32Array(PARTICLE_COUNT * 3)
-  const pAlphas = new Float32Array(PARTICLE_COUNT)
-  const pVelocities: THREE.Vector3[] = []
-  const pOrbitData: { radius: number; angle: number; speed: number; tilt: number; yOff: number }[] = []
+  const PART_N = 4000
+  const pPos = new Float32Array(PART_N * 3)
+  const pSize = new Float32Array(PART_N)
+  const pColor = new Float32Array(PART_N * 3)
+  const pAlpha = new Float32Array(PART_N)
+  const pVel: THREE.Vector3[] = []
+  const pOrbit: { r: number; a: number; sp: number; tilt: number; y: number }[] = []
 
   const palette = [
     new THREE.Color(COLORS.cyan),
     new THREE.Color(COLORS.magenta),
     new THREE.Color(COLORS.green),
     new THREE.Color(COLORS.gold),
-    new THREE.Color(COLORS.warm),
     new THREE.Color(COLORS.white),
   ]
 
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
-    pPositions[i * 3] = 0
-    pPositions[i * 3 + 1] = 0
-    pPositions[i * 3 + 2] = 0
-    pSizes[i] = 0.8 + Math.random() * 4.0  // Much larger particles
-    pAlphas[i] = 0
-
+  for (let i = 0; i < PART_N; i++) {
+    pPos[i*3] = pPos[i*3+1] = pPos[i*3+2] = 0
+    pSize[i] = 0.5 + Math.random() * 3.0
+    pAlpha[i] = 0
     const c = palette[Math.floor(Math.random() * palette.length)]
-    const brightness = 0.7 + Math.random() * 0.3
-    pColors[i * 3] = c.r * brightness
-    pColors[i * 3 + 1] = c.g * brightness
-    pColors[i * 3 + 2] = c.b * brightness
+    pColor[i*3] = c.r; pColor[i*3+1] = c.g; pColor[i*3+2] = c.b
 
-    const theta = Math.random() * Math.PI * 2
-    const phi = Math.acos(2 * Math.random() - 1)
-    const speed = 0.5 + Math.random() * 3.0
-    pVelocities.push(new THREE.Vector3(
-      Math.sin(phi) * Math.cos(theta) * speed,
-      Math.sin(phi) * Math.sin(theta) * speed,
-      Math.cos(phi) * speed,
+    const th = Math.random() * Math.PI * 2
+    const ph = Math.acos(2 * Math.random() - 1)
+    const sp = 0.5 + Math.random() * 4
+    pVel.push(new THREE.Vector3(
+      Math.sin(ph) * Math.cos(th) * sp,
+      Math.sin(ph) * Math.sin(th) * sp,
+      Math.cos(ph) * sp
     ))
-    pOrbitData.push({
-      radius: 2 + Math.random() * 10,
-      angle: Math.random() * Math.PI * 2,
-      speed: 0.02 + Math.random() * 0.08,
-      tilt: (Math.random() - 0.5) * 0.6,
-      yOff: (Math.random() - 0.5) * 2,
+    pOrbit.push({
+      r: 3 + Math.random() * 12,
+      a: Math.random() * Math.PI * 2,
+      sp: 0.01 + Math.random() * 0.06,
+      tilt: (Math.random() - 0.5) * 0.5,
+      y: (Math.random() - 0.5) * 3,
     })
   }
 
-  const pGeo = new THREE.BufferGeometry()
-  pGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3))
-  pGeo.setAttribute('aSize', new THREE.BufferAttribute(pSizes, 1))
-  pGeo.setAttribute('aColor', new THREE.BufferAttribute(pColors, 3))
-  pGeo.setAttribute('aAlpha', new THREE.BufferAttribute(pAlphas, 1))
+  const partGeo = new THREE.BufferGeometry()
+  partGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3))
+  partGeo.setAttribute('aSize', new THREE.BufferAttribute(pSize, 1))
+  partGeo.setAttribute('aColor', new THREE.BufferAttribute(pColor, 3))
+  partGeo.setAttribute('aAlpha', new THREE.BufferAttribute(pAlpha, 1))
 
-  const pMat = new THREE.ShaderMaterial({
-    vertexShader: nebulaVertexShader,
-    fragmentShader: nebulaFragmentShader,
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
+  const partMat = new THREE.ShaderMaterial({
+    vertexShader: particleVert, fragmentShader: particleFrag,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
   })
-  const particleSystem = new THREE.Points(pGeo, pMat)
-  particleSystem.visible = false
-  scene.add(particleSystem)
+  const particles = new THREE.Points(partGeo, partMat)
+  particles.visible = false
+  scene.add(particles)
 
   // ══════════════════════════════════════════════════
-  // STAR SYSTEMS (3 evolving stars with glow + orbits)
+  // STAR SYSTEMS (3 stars with glow + orbiting planets)
   // ══════════════════════════════════════════════════
-  interface StarSystem {
+  interface StarSys {
     core: THREE.Mesh
-    glow: THREE.Mesh
+    glow: THREE.Sprite
     light: THREE.PointLight
-    orbitRings: THREE.Line[]
+    rings: THREE.Line[]
     planets: THREE.Mesh[]
-    planetData: { orbitR: number; speed: number; angle: number; tilt: number }[]
-    position: THREE.Vector3
-    color: THREE.Color
+    planetGlows: THREE.Sprite[]
+    planetOrbits: { r: number; sp: number; a: number; tilt: number }[]
+    pos: THREE.Vector3
+    color: number
     activateAt: number
     label: string
   }
 
-  const STAR_CONFIGS = [
-    { pos: [0, 0, 0], color: COLORS.cyan, size: 1.5, activate: 0.45, label: 'Precision Performance',
-      orbits: [{ r: 6, speed: 0.15, count: 3, tilt: 0.1, planetColor: COLORS.cyan }] },
-    { pos: [-8, 3, -3], color: COLORS.magenta, size: 1.2, activate: 0.60, label: 'Social Engine',
-      orbits: [{ r: 5, speed: 0.12, count: 3, tilt: -0.15, planetColor: COLORS.magenta }] },
-    { pos: [7, -2, -4], color: COLORS.green, size: 1.0, activate: 0.75, label: 'Organic & Design',
+  const STAR_CFG = [
+    { pos: [0, 0, 0], color: COLORS.cyan, coreSize: 0.8, glowSize: 8, activate: 0.45, label: 'Precision Performance',
+      orbits: [{ r: 5, count: 3, speed: 0.12, tilt: 0.1, pColor: COLORS.cyan }] },
+    { pos: [-7, 2.5, -3], color: COLORS.magenta, coreSize: 0.65, glowSize: 7, activate: 0.60, label: 'Social Engine',
+      orbits: [{ r: 4.5, count: 3, speed: 0.10, tilt: -0.15, pColor: COLORS.magenta }] },
+    { pos: [6, -2, -4], color: COLORS.green, coreSize: 0.55, glowSize: 6, activate: 0.75, label: 'Organic & Design',
       orbits: [
-        { r: 4.5, speed: 0.10, count: 2, tilt: 0.2, planetColor: COLORS.green },
-        { r: 7, speed: 0.07, count: 3, tilt: -0.1, planetColor: COLORS.gold },
+        { r: 3.5, count: 2, speed: 0.08, tilt: 0.2, pColor: COLORS.green },
+        { r: 6, count: 3, speed: 0.06, tilt: -0.1, pColor: COLORS.gold },
       ] },
   ]
 
-  const starSystems: StarSystem[] = STAR_CONFIGS.map((cfg) => {
+  const starSystems: StarSys[] = STAR_CFG.map(cfg => {
     const pos = new THREE.Vector3(cfg.pos[0], cfg.pos[1], cfg.pos[2])
-    const color = new THREE.Color(cfg.color)
 
-    // Core sphere with emissive
-    const coreGeoS = new THREE.SphereGeometry(cfg.size, 32, 32)
-    const coreMatS = new THREE.MeshBasicMaterial({
-      color: cfg.color,
-      transparent: true,
-      opacity: 0,
-    })
-    const coreMeshS = new THREE.Mesh(coreGeoS, coreMatS)
-    coreMeshS.position.copy(pos)
-    scene.add(coreMeshS)
+    // Core: bright solid sphere
+    const coreGeo = new THREE.SphereGeometry(cfg.coreSize, 32, 32)
+    const coreMat = new THREE.MeshBasicMaterial({ color: cfg.color, transparent: true, opacity: 0 })
+    const core = new THREE.Mesh(coreGeo, coreMat)
+    core.position.copy(pos)
+    scene.add(core)
 
-    // Glow sphere (larger, additive)
-    const glowGeoS = new THREE.SphereGeometry(cfg.size * 6, 32, 32)
-    const glowMatS = new THREE.ShaderMaterial({
-      vertexShader: starGlowVertexShader,
-      fragmentShader: starGlowFragmentShader,
-      uniforms: {
-        uColor: { value: color.clone() },
-        uIntensity: { value: 0 },
-      },
-      transparent: true,
-      side: THREE.BackSide,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    })
-    const glowMeshS = new THREE.Mesh(glowGeoS, glowMatS)
-    glowMeshS.position.copy(pos)
-    scene.add(glowMeshS)
+    // Glow sprite
+    const glow = createGlowSprite(cfg.color, cfg.glowSize)
+    glow.position.copy(pos)
+    glow.material.opacity = 0
+    scene.add(glow)
 
-    // Point light
-    const lightS = new THREE.PointLight(cfg.color, 0, 30)
-    lightS.position.copy(pos)
-    scene.add(lightS)
+    // Light
+    const light = new THREE.PointLight(cfg.color, 0, 30)
+    light.position.copy(pos)
+    scene.add(light)
 
     // Orbit rings + planets
-    const orbitRings: THREE.Line[] = []
+    const rings: THREE.Line[] = []
     const planets: THREE.Mesh[] = []
-    const planetData: { orbitR: number; speed: number; angle: number; tilt: number }[] = []
+    const planetGlows: THREE.Sprite[] = []
+    const planetOrbits: { r: number; sp: number; a: number; tilt: number }[] = []
 
-    cfg.orbits.forEach((orbit) => {
-      // Orbit ring (circle)
-      const ringPts: THREE.Vector3[] = []
-      for (let i = 0; i <= 128; i++) {
-        const a = (i / 128) * Math.PI * 2
-        ringPts.push(new THREE.Vector3(Math.cos(a) * orbit.r, 0, Math.sin(a) * orbit.r))
+    cfg.orbits.forEach(orb => {
+      // Ring
+      const pts: THREE.Vector3[] = []
+      for (let i = 0; i <= 96; i++) {
+        const a = (i / 96) * Math.PI * 2
+        pts.push(new THREE.Vector3(Math.cos(a) * orb.r, 0, Math.sin(a) * orb.r))
       }
-      const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPts)
-      const ringMat = new THREE.LineBasicMaterial({
-        color: orbit.planetColor,
-        transparent: true,
-        opacity: 0,
-      })
+      const ringGeo = new THREE.BufferGeometry().setFromPoints(pts)
+      const ringMat = new THREE.LineBasicMaterial({ color: orb.pColor, transparent: true, opacity: 0 })
       const ring = new THREE.Line(ringGeo, ringMat)
       ring.position.copy(pos)
-      ring.rotation.x = Math.PI / 2 + orbit.tilt
+      ring.rotation.x = Math.PI / 2 + orb.tilt
       scene.add(ring)
-      orbitRings.push(ring)
+      rings.push(ring)
 
       // Planets
-      for (let pi = 0; pi < orbit.count; pi++) {
-        const plGeo = new THREE.SphereGeometry(0.35, 16, 16)
-        const plMat = new THREE.MeshBasicMaterial({
-          color: orbit.planetColor,
-          transparent: true,
-          opacity: 0,
-        })
+      for (let pi = 0; pi < orb.count; pi++) {
+        const plGeo = new THREE.SphereGeometry(0.2, 16, 16)
+        const plMat = new THREE.MeshBasicMaterial({ color: orb.pColor, transparent: true, opacity: 0 })
         const pl = new THREE.Mesh(plGeo, plMat)
         scene.add(pl)
         planets.push(pl)
-        planetData.push({
-          orbitR: orbit.r,
-          speed: orbit.speed * (0.8 + Math.random() * 0.4),
-          angle: (pi / orbit.count) * Math.PI * 2,
-          tilt: orbit.tilt,
-        })
 
-        // Planet glow
-        const plGlowGeo = new THREE.SphereGeometry(0.8, 8, 8)
-        const plGlowMat = new THREE.ShaderMaterial({
-          vertexShader: starGlowVertexShader,
-          fragmentShader: starGlowFragmentShader,
-          uniforms: {
-            uColor: { value: new THREE.Color(orbit.planetColor) },
-            uIntensity: { value: 0 },
-          },
-          transparent: true,
-          side: THREE.BackSide,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending,
-        })
-        const plGlow = new THREE.Mesh(plGlowGeo, plGlowMat)
+        const plGlow = createGlowSprite(orb.pColor, 1.2)
+        plGlow.material.opacity = 0
         scene.add(plGlow)
-        // Store reference on planet for updates
-        ;(pl as any)._glow = plGlow
-        ;(pl as any)._glowMat = plGlowMat
+        planetGlows.push(plGlow)
+
+        planetOrbits.push({
+          r: orb.r,
+          sp: orb.speed * (0.8 + Math.random() * 0.4),
+          a: (pi / orb.count) * Math.PI * 2 + Math.random() * 0.5,
+          tilt: orb.tilt,
+        })
       }
     })
 
-    return { core: coreMeshS, glow: glowMeshS, light: lightS, orbitRings, planets, planetData, position: pos, color, activateAt: cfg.activate, label: cfg.label }
+    return { core, glow, light, rings, planets, planetGlows, planetOrbits, pos, color: cfg.color, activateAt: cfg.activate, label: cfg.label }
   })
 
-  // ── Connection lines between stars ──
-  const connGeo = new THREE.BufferGeometry()
-  const connMat = new THREE.LineBasicMaterial({
-    color: COLORS.cyan,
-    transparent: true,
-    opacity: 0,
-    blending: THREE.AdditiveBlending,
-  })
-  const connLines = new THREE.LineSegments(connGeo, connMat)
-  scene.add(connLines)
+  // ── Connection energy beams between stars ──
+  const beamMat = new THREE.LineBasicMaterial({ color: COLORS.cyan, transparent: true, opacity: 0, blending: THREE.AdditiveBlending })
+  const beamGeo = new THREE.BufferGeometry()
+  const beams = new THREE.LineSegments(beamGeo, beamMat)
+  scene.add(beams)
 
   // ══════════════════════════════════════════════════
-  // STATE
+  // ANIMATION STATE
   // ══════════════════════════════════════════════════
   let progress = 0
   let activated = false
-  let activationProgress = 0
-  const clock = new THREE.Clock()
+  let activationT = 0  // 0 to 1, driven by time
+  let elapsedTime = 0
+  let lastTime = performance.now()
 
   // ══════════════════════════════════════════════════
-  // ANIMATION LOOP
+  // RENDER LOOP
   // ══════════════════════════════════════════════════
+  let animId = 0
   function animate() {
-    requestAnimationFrame(animate)
-    const t = clock.getElapsedTime()
-    const dt = Math.min(clock.getDelta(), 0.05)
+    animId = requestAnimationFrame(animate)
+    const now = performance.now()
+    const dt = Math.min((now - lastTime) / 1000, 0.05)
+    lastTime = now
+    elapsedTime += dt
+    const t = elapsedTime
     const p = progress
 
-    // ── Activation ──
-    if (activated && activationProgress < 1) {
-      activationProgress = Math.min(1, activationProgress + dt * 0.5) // ~2s
+    // ── Activation animation ──
+    if (activated && activationT < 1) {
+      activationT = Math.min(1, activationT + dt * 0.4) // ~2.5s
     }
-    const ap = activationProgress
-    const easeAp = 1 - Math.pow(1 - ap, 3)
+    const ap = activationT
+    const eAp = 1 - Math.pow(1 - ap, 3) // ease out cubic
 
-    // ── Star field twinkling ──
-    const sAlphas = starGeo.attributes.aAlpha as THREE.BufferAttribute
-    for (let i = 0; i < STAR_COUNT; i++) {
-      const twinkle = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(t * (1 + starPhases[i]) + starPhases[i] * 10))
-      sAlphas.setX(i, twinkle * (activated && ap >= 1 && p > 0.3 ? Math.max(0.15, 1 - (p - 0.3) * 0.5) : 1))
+    // ── Twinkling stars ──
+    const sAlphaAttr = starGeo.attributes.aAlpha as THREE.BufferAttribute
+    for (let i = 0; i < STAR_N; i++) {
+      const twinkle = 0.2 + 0.8 * (0.5 + 0.5 * Math.sin(t * (1.5 + sPhase[i] * 0.5) + sPhase[i] * 10))
+      sAlphaAttr.setX(i, twinkle * sAlpha[i])
     }
-    sAlphas.needsUpdate = true
+    sAlphaAttr.needsUpdate = true
 
-    // ── Color bleed (bloom flash on activation) ──
+    // ══════════════════════════════════
+    // PHASE: ACTIVATION (click → egg forms)
+    // ══════════════════════════════════
     if (activated && ap < 1) {
-      bloomPass.strength = 1.3 + easeAp * 4.0 // massive bloom surge
-      renderer.toneMappingExposure = 1.0 + easeAp * 1.0
-      coreMat.opacity = easeAp * 0.9
-      coreMesh.scale.setScalar(easeAp * 5)
-      coreMat.color.setHSL(0.5, 0.8, 0.5 + easeAp * 0.3)
-      eggLight.intensity = easeAp * 15
+      // Bloom flash
+      bloomPass.strength = 1.0 + eAp * 3.0
+      renderer.toneMappingExposure = 1.2 + eAp * 1.0
+
+      // Egg shell fades in
+      eggShellMat.opacity = eAp * 0.35
+      eggShell.scale.setScalar(eAp * 1.0)
+
+      // Core brightens
+      eggCoreMat.opacity = eAp * 0.9
+      eggCore.scale.setScalar(eAp * 1.0)
+
+      // Glow expands
+      eggGlow.material.opacity = eAp * 0.8
+      eggGlow.scale.setScalar(eAp * 12)
+
+      // Light
+      eggLight.intensity = eAp * 10
     }
 
-    // ── Egg (appears during activation, driven by scroll after) ──
-    if (activated && ap > 0.3) {
-      eggMesh.visible = true
-      const eggVis = Math.min(1, (ap - 0.3) / 0.7)
+    // ══════════════════════════════════
+    // PHASE: SCROLL JOURNEY
+    // ══════════════════════════════════
+    if (activated && ap >= 1) {
+      if (p < 0.15) {
+        // ── EGG ENERGY BUILDING ──
+        const ep = p / 0.15 // 0→1
+        const pulse = 0.8 + 0.2 * Math.sin(t * (3 + ep * 5))
 
-      if (ap >= 1 && p < 0.15) {
-        // Idle egg with building energy
-        const energy = p / 0.15
-        eggMat.uniforms.uTime.value = t
-        eggMat.uniforms.uEnergy.value = 0.2 + energy * 0.8
-        eggMat.uniforms.uDisplacement.value = 0.02 + energy * 0.06
-        eggMesh.scale.setScalar(1.0 + Math.sin(t * (2 + energy * 3)) * 0.03)
+        eggShellMat.opacity = 0.25 + ep * 0.15
+        eggShellMat.color.setHSL(0.52 - ep * 0.02, 0.4 + ep * 0.3, 0.6 + ep * 0.2)
+        eggShell.scale.setScalar(pulse)
 
-        haloMat.uniforms.uIntensity.value = (0.3 + energy * 1.2) * eggVis
-        haloMesh.scale.setScalar(1 + energy * 0.5)
+        eggCoreMat.opacity = 0.8 + ep * 0.2
+        eggCoreMat.color.lerpColors(new THREE.Color(COLORS.cyan), new THREE.Color(COLORS.white), ep * 0.5)
+        eggCore.scale.setScalar(0.8 + ep * 0.5 + Math.sin(t * 4) * 0.05 * ep)
 
-        coreMat.opacity = (0.3 + energy * 0.4) * eggVis
-        coreMesh.scale.setScalar(0.8 + energy * 0.4)
-        eggLight.intensity = (3 + energy * 6) * eggVis
+        eggGlow.material.opacity = 0.6 + ep * 0.4
+        eggGlow.scale.setScalar(10 + ep * 6)
 
-        bloomPass.strength = 1.3 + energy * 1.0
-      } else if (ap >= 1 && p >= 0.15 && p < 0.30) {
-        // CRACKING
-        const crackP = (p - 0.15) / 0.15
-        eggMat.uniforms.uTime.value = t
-        eggMat.uniforms.uEnergy.value = 1.0
-        eggMat.uniforms.uDisplacement.value = 0.08 + crackP * 0.15
-        eggMesh.scale.setScalar(1.0 + Math.sin(t * 20) * 0.02 * crackP)
-        eggMat.uniforms.uGlowColor.value.setHSL(0.5 + crackP * 0.1, 0.9, 0.5 + crackP * 0.3)
+        eggLight.intensity = 8 + ep * 12
 
-        // Shell opacity decreases, core brightens
-        haloMat.uniforms.uIntensity.value = 1.5 + crackP * 2.0
-        haloMesh.scale.setScalar(1.5 + crackP * 1.5)
-        coreMat.opacity = 0.7 + crackP * 0.3
-        coreMesh.scale.setScalar(1.2 + crackP * 1.5)
-        eggLight.intensity = 9 + crackP * 15
+        bloomPass.strength = 1.5 + ep * 1.5
+        renderer.toneMappingExposure = 1.5 + ep * 0.5
 
-        // Fragments emerge
+      } else if (p < 0.30) {
+        // ── CRACKING ──
+        const cp = (p - 0.15) / 0.15 // 0→1
+        const shake = Math.sin(t * 30) * cp * 0.06
+
+        // Egg distorts and cracks
+        eggShellMat.opacity = 0.4 * (1 - cp * 0.5)
+        eggShellMat.color.setHSL(0.5, 0.7, 0.7 + cp * 0.3) // brightens
+        eggShell.scale.setScalar(1 + cp * 0.3 + shake)
+
+        // Core gets VERY bright
+        eggCoreMat.opacity = 1.0
+        eggCoreMat.color.set(0xffffff)
+        eggCore.scale.setScalar(1.3 + cp * 1.5)
+
+        eggGlow.material.opacity = 1.0
+        eggGlow.scale.setScalar(16 + cp * 10)
+
+        eggLight.intensity = 20 + cp * 30
+
+        // Shell fragments fly out
         fragGroup.visible = true
-        for (let i = 0; i < FRAG_COUNT; i++) {
+        for (let i = 0; i < FRAG_N; i++) {
           const mesh = fragGroup.children[i] as THREE.Mesh
           const fd = fragData[i]
-          const dist = 3.5 + crackP * 5.0
+          const dist = 2.5 + cp * 6
           mesh.position.copy(fd.dir).multiplyScalar(dist)
-          mesh.quaternion.setFromAxisAngle(fd.rotAxis, t * fd.speed * crackP)
-          mesh.scale.setScalar(crackP)
-          ;(mesh.material as THREE.MeshStandardMaterial).opacity = crackP * 0.9
-          ;(mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.3 + crackP * 1.0
+          mesh.rotation.set(fd.rot.x * t, fd.rot.y * t, fd.rot.z * t)
+          ;(mesh.material as THREE.MeshBasicMaterial).opacity = cp * 0.8
+          ;(mesh.material as THREE.MeshBasicMaterial).color.setHSL(0.5, 0.5, 0.7 + cp * 0.3)
         }
 
-        bloomPass.strength = 2.3 + crackP * 2.0
-        renderer.toneMappingExposure = 1.5 + crackP * 1.0
-      } else if (ap >= 1 && p >= 0.30 && p < 0.45) {
-        // THE BANG
-        const bangP = (p - 0.30) / 0.15
-        const easeBang = 1 - Math.pow(1 - bangP, 2)
+        bloomPass.strength = 3.0 + cp * 3.0
+        renderer.toneMappingExposure = 2.0 + cp * 1.5
 
-        // Egg dissolves
-        eggMesh.visible = bangP < 0.3
-        eggMesh.scale.setScalar(1 + bangP * 5)
-        coreMat.opacity = Math.max(0, 1 - bangP * 3)
-        coreMesh.scale.setScalar(2.7 + bangP * 10)
+        // Camera shake
+        camera.position.x = shake
+        camera.position.y = shake * 0.7
 
-        // Massive halo flash then fade
-        haloMat.uniforms.uIntensity.value = Math.max(0, 3.5 * (1 - bangP * 1.5))
-        haloMesh.scale.setScalar(3 + bangP * 20)
-        eggLight.intensity = Math.max(0, 24 * (1 - bangP))
+      } else if (p < 0.45) {
+        // ── THE BANG ──
+        const bp = (p - 0.30) / 0.15 // 0→1
+        const eBp = 1 - Math.pow(1 - bp, 2)
 
-        // Bloom flash
-        bloomPass.strength = Math.max(1.3, 4.3 - bangP * 3.0)
-        renderer.toneMappingExposure = Math.max(1.0, 2.5 - bangP * 1.5)
+        // Egg dissolves in flash
+        const eggFade = Math.max(0, 1 - bp * 4)
+        eggShellMat.opacity = 0.2 * eggFade
+        eggShell.scale.setScalar(1.3 + bp * 8)
+        eggCoreMat.opacity = eggFade
+        eggCore.scale.setScalar(2.8 + bp * 15)
+        eggGlow.material.opacity = Math.max(0, 1 - bp * 2)
+        eggGlow.scale.setScalar(26 + bp * 40)
+        eggLight.intensity = Math.max(0, 50 * (1 - bp * 1.5))
 
-        // Fragments fly out
-        fragGroup.visible = bangP < 0.7
-        for (let i = 0; i < FRAG_COUNT; i++) {
+        // Fragments fly far
+        fragGroup.visible = bp < 0.6
+        for (let i = 0; i < FRAG_N; i++) {
           const mesh = fragGroup.children[i] as THREE.Mesh
           const fd = fragData[i]
-          const dist = 8.5 + easeBang * 40
-          mesh.position.copy(fd.dir).multiplyScalar(dist)
-          mesh.quaternion.setFromAxisAngle(fd.rotAxis, t * fd.speed)
-          mesh.scale.setScalar(Math.max(0, 1 - bangP * 1.5))
-          ;(mesh.material as THREE.MeshStandardMaterial).opacity = Math.max(0, 0.9 - bangP * 1.5)
+          mesh.position.copy(fd.dir).multiplyScalar(8.5 + eBp * 40)
+          mesh.rotation.set(fd.rot.x * t, fd.rot.y * t, fd.rot.z * t)
+          ;(mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.8 - bp * 1.5)
         }
 
-        // PARTICLES EXPLODE
-        particleSystem.visible = true
-        const posArr = pGeo.attributes.position as THREE.BufferAttribute
-        const alphaArr = pGeo.attributes.aAlpha as THREE.BufferAttribute
-        for (let i = 0; i < PARTICLE_COUNT; i++) {
-          const v = pVelocities[i]
-          posArr.setXYZ(i, v.x * easeBang * 30, v.y * easeBang * 30, v.z * easeBang * 30)
-          alphaArr.setX(i, Math.min(1, bangP * 4) * (0.3 + Math.random() * 0.7))
+        // EXPLOSION PARTICLES
+        particles.visible = true
+        const posAttr = partGeo.attributes.position as THREE.BufferAttribute
+        const alphaAttr = partGeo.attributes.aAlpha as THREE.BufferAttribute
+        for (let i = 0; i < PART_N; i++) {
+          const v = pVel[i]
+          posAttr.setXYZ(i, v.x * eBp * 25, v.y * eBp * 25, v.z * eBp * 25)
+          alphaAttr.setX(i, Math.min(1, bp * 5) * (0.3 + Math.random() * 0.7))
         }
-        posArr.needsUpdate = true
-        alphaArr.needsUpdate = true
-      } else if (ap >= 1 && p >= 0.45) {
-        // POST-BANG: particles settle into orbits, stars emerge
-        eggMesh.visible = false
+        posAttr.needsUpdate = true
+        alphaAttr.needsUpdate = true
+
+        // Massive bloom flash then settle
+        bloomPass.strength = Math.max(1.5, 6.0 - bp * 4.5)
+        renderer.toneMappingExposure = Math.max(1.2, 3.5 - bp * 2.3)
+
+        camera.position.x = 0
+        camera.position.y = 0
+
+      } else {
+        // ── POST-BANG: nebula settles, stars emerge ──
+        eggShellMat.opacity = 0
+        eggCoreMat.opacity = 0
+        eggGlow.material.opacity = 0
+        eggLight.intensity = 0
         fragGroup.visible = false
-        coreMat.opacity = 0
-        haloMat.uniforms.uIntensity.value = 0
 
-        // Bloom settles
-        bloomPass.strength = 1.3
-        renderer.toneMappingExposure = 1.0
+        bloomPass.strength = 1.5
+        renderer.toneMappingExposure = 1.2
 
-        // Particles transition from explosion to orbiting
-        particleSystem.visible = true
-        const posArr = pGeo.attributes.position as THREE.BufferAttribute
-        const alphaArr = pGeo.attributes.aAlpha as THREE.BufferAttribute
-        const settleP = Math.min(1, (p - 0.45) / 0.15) // 0→1 as particles settle
+        // Particles transition from explosion to orbiting nebula
+        particles.visible = true
+        const posAttr = partGeo.attributes.position as THREE.BufferAttribute
+        const alphaAttr = partGeo.attributes.aAlpha as THREE.BufferAttribute
+        const settleP = Math.min(1, (p - 0.45) / 0.12)
 
-        for (let i = 0; i < PARTICLE_COUNT; i++) {
-          const v = pVelocities[i]
-          const o = pOrbitData[i]
-
+        for (let i = 0; i < PART_N; i++) {
+          const v = pVel[i]
+          const o = pOrbit[i]
           // Exploded position
-          const expX = v.x * 30, expY = v.y * 30, expZ = v.z * 30
-
+          const ex = v.x * 25, ey = v.y * 25, ez = v.z * 25
           // Orbit position
-          const angle = o.angle + t * o.speed
-          const orbX = Math.cos(angle) * o.radius
-          const orbY = o.yOff + Math.sin(angle) * o.radius * o.tilt
-          const orbZ = Math.sin(angle) * o.radius
-
+          const angle = o.a + t * o.sp
+          const ox = Math.cos(angle) * o.r
+          const oy = o.y + Math.sin(angle) * o.r * o.tilt
+          const oz = Math.sin(angle) * o.r
           // Lerp
-          const lx = expX + (orbX - expX) * settleP
-          const ly = expY + (orbY - expY) * settleP
-          const lz = expZ + (orbZ - expZ) * settleP
-          posArr.setXYZ(i, lx, ly, lz)
-
-          // Fade as stars take over
-          const fade = p > 0.8 ? Math.max(0.05, 1 - (p - 0.8) / 0.2) : 1
-          alphaArr.setX(i, 0.15 + Math.random() * 0.25 * fade)
+          posAttr.setXYZ(i,
+            ex + (ox - ex) * settleP,
+            ey + (oy - ey) * settleP,
+            ez + (oz - ez) * settleP
+          )
+          const fade = p > 0.85 ? Math.max(0.03, 1 - (p - 0.85) / 0.15) : 1
+          alphaAttr.setX(i, (0.1 + Math.random() * 0.2) * fade)
         }
-        posArr.needsUpdate = true
-        alphaArr.needsUpdate = true
+        posAttr.needsUpdate = true
+        alphaAttr.needsUpdate = true
 
-        // STAR SYSTEMS
-        const activePositions: THREE.Vector3[] = []
+        // ── Star systems ──
+        const activePos: THREE.Vector3[] = []
 
-        starSystems.forEach((sys) => {
-          const vis = Math.max(0, Math.min(1, (p - sys.activateAt) / 0.04))
+        starSystems.forEach(sys => {
+          const vis = Math.max(0, Math.min(1, (p - sys.activateAt) / 0.05))
 
           if (vis > 0) {
-            // Star core
-            const breathe = 1 + Math.sin(t * 2.5) * 0.08
+            const breathe = 1 + Math.sin(t * 2.5) * 0.1
             ;(sys.core.material as THREE.MeshBasicMaterial).opacity = vis
             sys.core.scale.setScalar(breathe * vis)
+            sys.glow.material.opacity = vis * 0.9
+            sys.glow.scale.setScalar(vis * (sys.glow.scale.x > 0 ? 1 : 0.01))
+            sys.light.intensity = vis * 12
 
-            // Star glow
-            ;(sys.glow.material as THREE.ShaderMaterial).uniforms.uIntensity.value = vis * 3.0
-            sys.glow.scale.setScalar(1 + vis * 0.5)
+            activePos.push(sys.pos)
 
-            // Light
-            sys.light.intensity = vis * 15
-
-            activePositions.push(sys.position)
-
-            // Orbits + planets
-            sys.orbitRings.forEach((ring) => {
-              ;(ring.material as THREE.LineBasicMaterial).opacity = vis * 0.25
+            // Rings
+            sys.rings.forEach(ring => {
+              ;(ring.material as THREE.LineBasicMaterial).opacity = vis * 0.3
             })
 
+            // Planets orbit
             sys.planets.forEach((pl, pi) => {
-              const pd = sys.planetData[pi]
-              const pVis = Math.max(0, Math.min(1, (p - sys.activateAt - 0.03 - pi * 0.01) / 0.04))
+              const po = sys.planetOrbits[pi]
+              const pVis = Math.max(0, Math.min(1, (p - sys.activateAt - 0.02 - pi * 0.008) / 0.03))
               ;(pl.material as THREE.MeshBasicMaterial).opacity = pVis
 
-              const angle = pd.angle + t * pd.speed
-              const cos_tilt = Math.cos(pd.tilt)
-              const sin_tilt = Math.sin(pd.tilt)
-              const localX = Math.cos(angle) * pd.orbitR
-              const localZ = Math.sin(angle) * pd.orbitR
+              const angle = po.a + t * po.sp
+              const cTilt = Math.cos(po.tilt), sTilt = Math.sin(po.tilt)
+              const lx = Math.cos(angle) * po.r
+              const lz = Math.sin(angle) * po.r
               pl.position.set(
-                sys.position.x + localX,
-                sys.position.y + localZ * sin_tilt,
-                sys.position.z + localZ * cos_tilt,
+                sys.pos.x + lx,
+                sys.pos.y + lz * sTilt,
+                sys.pos.z + lz * cTilt
               )
 
-              // Update planet glow
-              const glow = (pl as any)._glow as THREE.Mesh
-              const glowMat = (pl as any)._glowMat as THREE.ShaderMaterial
-              if (glow && glowMat) {
-                glow.position.copy(pl.position)
-                glowMat.uniforms.uIntensity.value = pVis * 1.5
-              }
+              // Planet glow follows
+              const pg = sys.planetGlows[pi]
+              pg.position.copy(pl.position)
+              pg.material.opacity = pVis * 0.7
             })
           } else {
             ;(sys.core.material as THREE.MeshBasicMaterial).opacity = 0
-            ;(sys.glow.material as THREE.ShaderMaterial).uniforms.uIntensity.value = 0
+            sys.glow.material.opacity = 0
             sys.light.intensity = 0
-            sys.orbitRings.forEach((ring) => { (ring.material as THREE.LineBasicMaterial).opacity = 0 })
-            sys.planets.forEach((pl) => {
-              ;(pl.material as THREE.MeshBasicMaterial).opacity = 0
-              const glowMat = (pl as any)._glowMat as THREE.ShaderMaterial
-              if (glowMat) glowMat.uniforms.uIntensity.value = 0
-            })
+            sys.rings.forEach(r => { (r.material as THREE.LineBasicMaterial).opacity = 0 })
+            sys.planets.forEach(pl => { (pl.material as THREE.MeshBasicMaterial).opacity = 0 })
+            sys.planetGlows.forEach(pg => { pg.material.opacity = 0 })
           }
         })
 
-        // Connection lines
-        if (activePositions.length >= 2) {
+        // Energy beams between active stars
+        if (activePos.length >= 2) {
           const pts: number[] = []
-          for (let i = 0; i < activePositions.length; i++) {
-            for (let j = i + 1; j < activePositions.length; j++) {
-              pts.push(activePositions[i].x, activePositions[i].y, activePositions[i].z)
-              pts.push(activePositions[j].x, activePositions[j].y, activePositions[j].z)
+          for (let i = 0; i < activePos.length; i++) {
+            for (let j = i + 1; j < activePos.length; j++) {
+              pts.push(activePos[i].x, activePos[i].y, activePos[i].z)
+              pts.push(activePos[j].x, activePos[j].y, activePos[j].z)
             }
           }
-          connGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts), 3))
-          connMat.opacity = 0.06
+          beamGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts), 3))
+          beamMat.opacity = 0.08
         } else {
-          connMat.opacity = 0
+          beamMat.opacity = 0
         }
-      } else if (ap < 1) {
-        // During activation — egg fading in
-        const eggVis2 = Math.min(1, (ap - 0.3) / 0.7)
-        eggMat.uniforms.uTime.value = t
-        eggMat.uniforms.uEnergy.value = eggVis2 * 0.2
-        eggMat.uniforms.uDisplacement.value = eggVis2 * 0.02
-        eggMesh.scale.setScalar(eggVis2)
-        haloMat.uniforms.uIntensity.value = eggVis2 * 0.3
       }
     }
 
     // ── Camera ──
-    let camTarget: THREE.Vector3
+    let cx = 0, cy = 0, cz = 12
     if (!activated || ap < 1) {
-      camTarget = new THREE.Vector3(0, 0, 12)
+      cx = 0; cy = 0; cz = 12
     } else if (p < 0.15) {
-      // Close on egg — fills screen
-      camTarget = new THREE.Vector3(0, 0, 9)
+      cz = 10 // close on egg
     } else if (p < 0.30) {
-      // Slight pullback, camera shake during cracks
-      const crackP2 = (p - 0.15) / 0.15
-      const shake = Math.sin(t * 25) * crackP2 * 0.15
-      camTarget = new THREE.Vector3(shake, shake * 0.7, 9 + crackP2 * 4)
+      cz = 10 + ((p - 0.15) / 0.15) * 4 // pull back during crack
     } else if (p < 0.45) {
-      // Bang — dramatic pullback through particle field
-      const bangP2 = (p - 0.30) / 0.15
-      camTarget = new THREE.Vector3(0, bangP2 * 3, 13 + bangP2 * 18)
+      const bp = (p - 0.30) / 0.15
+      cy = bp * 3
+      cz = 14 + bp * 16 // dramatic pullback
     } else if (p < 0.60) {
-      // 1-star — looking at first star system
       const sp = (p - 0.45) / 0.15
-      camTarget = new THREE.Vector3(sp * 1, 3 + sp * 2, 18 + sp * 5)
+      cx = sp * 1; cy = 3 + sp * 2; cz = 22 + sp * 4
     } else if (p < 0.75) {
-      // 2-star — wider to include both
       const sp = (p - 0.60) / 0.15
-      camTarget = new THREE.Vector3(-sp * 2, 5 + sp * 2, 23 + sp * 5)
+      cx = 1 - sp * 3; cy = 5 + sp * 2; cz = 26 + sp * 5
     } else if (p < 0.90) {
-      // 3-star — full system view
       const sp = (p - 0.75) / 0.15
-      camTarget = new THREE.Vector3(sp * 1, 7 + sp * 2, 28 + sp * 7)
+      cx = -2 + sp * 3; cy = 7 + sp * 2; cz = 31 + sp * 6
     } else {
-      // Final panoramic
-      camTarget = new THREE.Vector3(0, 10, 40)
+      cx = 1; cy = 10; cz = 40
     }
-    camera.position.lerp(camTarget, 0.12)  // Faster camera response
+    camera.position.lerp(new THREE.Vector3(cx, cy, cz), 0.08)
     camera.lookAt(0, 0, 0)
 
-    // ── Render via composer (bloom) ──
+    // ── Render ──
     composer.render()
   }
-
   animate()
 
+  // ── Resize ──
   function onResize() {
-    const w = window.innerWidth
-    const h = window.innerHeight
+    const w = window.innerWidth, h = window.innerHeight
     camera.aspect = w / h
     camera.updateProjectionMatrix()
     renderer.setSize(w, h)
@@ -917,9 +699,10 @@ function buildScene(canvas: HTMLCanvasElement) {
   return {
     setProgress(p: number) { progress = p },
     activate() { activated = true },
-    isActivated() { return activated && activationProgress >= 1 },
+    isActivated() { return activated && activationT >= 1 },
     dispose() {
       window.removeEventListener('resize', onResize)
+      cancelAnimationFrame(animId)
       renderer.dispose()
     },
   }
@@ -956,8 +739,7 @@ export default function BigBangJourney() {
   const animateStats = useCallback(() => {
     if (statsAnimated.current) return
     statsAnimated.current = true
-    const duration = 2000
-    const start = Date.now()
+    const duration = 2000, start = Date.now()
     const targets = { brands: 138, roas: 7.5, revenue: 2.8, referral: 80 }
     const tick = () => {
       const elapsed = Date.now() - start
@@ -985,7 +767,7 @@ export default function BigBangJourney() {
     if (phase !== 'idle') return
     setPhase('activating')
     sceneRef.current?.activate()
-    setTimeout(() => setPhase('journey'), 2500)
+    setTimeout(() => setPhase('journey'), 3000)
   }, [phase])
 
   useEffect(() => {
@@ -997,16 +779,16 @@ export default function BigBangJourney() {
       trigger: container,
       start: 'top top',
       end: 'bottom bottom',
-      scrub: 0.5,
+      scrub: 0.3,
       onUpdate: (self) => {
         sceneRef.current?.setProgress(self.progress)
 
         for (let i = STAGES.length - 1; i >= 0; i--) {
           if (self.progress >= STAGES[i].range[0]) {
-            setActiveStage((prev) => {
+            setActiveStage(prev => {
               if (prev !== i) {
                 setStageOpacity(0)
-                setTimeout(() => setStageOpacity(1), 200)
+                setTimeout(() => setStageOpacity(1), 150)
               }
               return i
             })
@@ -1030,7 +812,7 @@ export default function BigBangJourney() {
     <div
       ref={containerRef}
       className="relative"
-      style={{ height: phase === 'journey' ? '1000vh' : '100vh' }}
+      style={{ height: phase === 'journey' ? '800vh' : '100vh' }}
     >
       <div className="sticky top-0 h-screen w-full overflow-hidden">
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
@@ -1075,7 +857,7 @@ export default function BigBangJourney() {
         {phase === 'journey' && stageData?.title && (
           <div
             className="absolute left-8 md:left-16 lg:left-24 top-1/2 -translate-y-1/2 z-20 max-w-lg pointer-events-none"
-            style={{ opacity: stageOpacity, transition: 'opacity 0.4s ease' }}
+            style={{ opacity: stageOpacity, transition: 'opacity 0.3s ease' }}
           >
             <div className="space-y-4">
               {stageData.evo && (
@@ -1098,10 +880,8 @@ export default function BigBangJourney() {
 
         {/* STATS */}
         {showStats && (
-          <div
-            className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex flex-wrap justify-center gap-10 md:gap-16 pointer-events-none"
-            style={{ animation: 'fadeInUp 1s ease forwards' }}
-          >
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex flex-wrap justify-center gap-10 md:gap-16 pointer-events-none"
+            style={{ animation: 'fadeInUp 1s ease forwards' }}>
             {[
               { value: `${statValues.brands}+`, label: 'Brands' },
               { value: `${statValues.roas}X`, label: 'Avg ROAS' },
@@ -1121,13 +901,10 @@ export default function BigBangJourney() {
         {/* PROGRESS DOTS */}
         {phase === 'journey' && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 pointer-events-none">
-            {STAGES.filter((s) => s.title).map((_, i) => (
-              <div
-                key={i}
-                className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${
-                  i + 1 <= activeStage ? 'bg-cyan-400 shadow-[0_0_6px_rgba(0,212,255,0.5)]' : 'bg-white/15'
-                }`}
-              />
+            {STAGES.filter(s => s.title).map((_, i) => (
+              <div key={i} className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${
+                i + 1 <= activeStage ? 'bg-cyan-400 shadow-[0_0_6px_rgba(0,212,255,0.5)]' : 'bg-white/15'
+              }`} />
             ))}
           </div>
         )}
@@ -1135,9 +912,7 @@ export default function BigBangJourney() {
         {/* SCROLL HINT */}
         {phase === 'journey' && activeStage === 0 && (
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3 pointer-events-none">
-            <span className="text-[10px] tracking-[0.3em] uppercase text-white/20 font-mono">
-              Scroll to explore
-            </span>
+            <span className="text-[10px] tracking-[0.3em] uppercase text-white/20 font-mono">Scroll to explore</span>
             <div className="w-5 h-8 rounded-full border border-white/15 flex items-start justify-center p-1">
               <div className="w-1 h-2 rounded-full bg-cyan-400/60 animate-bounce" />
             </div>
