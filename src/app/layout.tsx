@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Playfair_Display, JetBrains_Mono } from 'next/font/g
 import './globals.css'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
+import { FloatingCTA } from '@/components/FloatingCTA'
 import SmoothScroll from '@/components/SmoothScroll'
 import GradientOrbs from '@/components/GradientOrbs'
 import CustomCursor from '@/components/CustomCursor'
@@ -41,6 +42,50 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${jakarta.variable} ${playfair.variable} ${jetbrains.variable}`}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "ProfessionalService",
+              "name": "NFlow Technologies",
+              "alternateName": "NFlow",
+              "url": "https://nflowtech.com",
+              "logo": "https://nflowtech.com/logo.png",
+              "description": "Full-spectrum digital marketing agency delivering 7.5X average ROAS across 138+ brands in 27+ industries.",
+              "telephone": "+91-905-433-1400",
+              "email": "hello@nflowtech.com",
+              "address": [
+                {
+                  "@type": "PostalAddress",
+                  "streetAddress": "A-906, Siddhi Vinayak Tower, nr. Kataria House, Makarba",
+                  "addressLocality": "Ahmedabad",
+                  "addressRegion": "Gujarat",
+                  "addressCountry": "IN"
+                },
+                {
+                  "@type": "PostalAddress",
+                  "addressLocality": "Jersey City",
+                  "addressRegion": "NJ",
+                  "addressCountry": "US"
+                }
+              ],
+              "founder": {
+                "@type": "Person",
+                "name": "Nevil Bhatt",
+                "jobTitle": "Founder & CEO"
+              },
+              "numberOfEmployees": { "@type": "QuantitativeValue", "value": 18 },
+              "knowsAbout": ["PPC", "SEO", "Google Ads", "Meta Ads", "Digital Marketing", "CRO"],
+              "sameAs": [
+                "https://www.linkedin.com/company/nflowtech/",
+                "https://www.instagram.com/nflowtech/"
+              ]
+            })
+          }}
+        />
+      </head>
       <body className="font-sans bg-navy-950 text-white overflow-x-hidden">
         <PageLoader />
         <CustomCursor />
@@ -53,6 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Header />
             <main id="main">{children}</main>
             <Footer />
+            <FloatingCTA />
           </div>
         </SmoothScroll>
       </body>
