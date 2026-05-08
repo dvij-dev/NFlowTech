@@ -245,7 +245,7 @@ function buildScene(canvas: HTMLCanvasElement) {
   // ══════════════════════════════════════════════════
   // STAR FIELD (2500 twinkling points)
   // ══════════════════════════════════════════════════
-  const STAR_COUNT = 3000
+  const STAR_COUNT = 2000
   const starPositions = new Float32Array(STAR_COUNT * 3)
   const starSizes = new Float32Array(STAR_COUNT)
   const starAlphas = new Float32Array(STAR_COUNT)
@@ -253,15 +253,16 @@ function buildScene(canvas: HTMLCanvasElement) {
   const starPhases = new Float32Array(STAR_COUNT)
 
   for (let i = 0; i < STAR_COUNT; i++) {
-    starPositions[i * 3] = (Math.random() - 0.5) * 300
-    starPositions[i * 3 + 1] = (Math.random() - 0.5) * 300
-    starPositions[i * 3 + 2] = -5 - Math.random() * 150
-    starSizes[i] = 0.8 + Math.random() * 2.5
-    starAlphas[i] = 0.4 + Math.random() * 0.6
-    const temp = 0.7 + Math.random() * 0.3
+    // Push stars far back so they're small and subtle
+    starPositions[i * 3] = (Math.random() - 0.5) * 400
+    starPositions[i * 3 + 1] = (Math.random() - 0.5) * 400
+    starPositions[i * 3 + 2] = -30 - Math.random() * 200
+    starSizes[i] = 0.2 + Math.random() * 0.6  // Much smaller — subtle pinpoints
+    starAlphas[i] = 0.2 + Math.random() * 0.4  // Dimmer
+    const temp = 0.8 + Math.random() * 0.2
     starColors[i * 3] = temp
     starColors[i * 3 + 1] = temp
-    starColors[i * 3 + 2] = 0.8 + Math.random() * 0.2
+    starColors[i * 3 + 2] = 0.9 + Math.random() * 0.1
     starPhases[i] = Math.random() * Math.PI * 2
   }
 
@@ -284,7 +285,7 @@ function buildScene(canvas: HTMLCanvasElement) {
   // ══════════════════════════════════════════════════
   // COSMIC EGG (custom shader material)
   // ══════════════════════════════════════════════════
-  const eggGeo = new THREE.SphereGeometry(1.8, 128, 128)
+  const eggGeo = new THREE.SphereGeometry(3.5, 128, 128)  // Much larger egg
   const eggMat = new THREE.ShaderMaterial({
     vertexShader: eggVertexShader,
     fragmentShader: eggFragmentShader,
@@ -304,7 +305,7 @@ function buildScene(canvas: HTMLCanvasElement) {
   scene.add(eggMesh)
 
   // Egg inner core (solid bright glow)
-  const coreGeo = new THREE.SphereGeometry(0.8, 32, 32)
+  const coreGeo = new THREE.SphereGeometry(1.8, 32, 32)
   const coreMat = new THREE.MeshBasicMaterial({
     color: COLORS.cyan,
     transparent: true,
@@ -314,7 +315,7 @@ function buildScene(canvas: HTMLCanvasElement) {
   scene.add(coreMesh)
 
   // Egg outer glow halo
-  const haloGeo = new THREE.SphereGeometry(3.0, 32, 32)
+  const haloGeo = new THREE.SphereGeometry(6.0, 32, 32)
   const haloMat = new THREE.ShaderMaterial({
     vertexShader: starGlowVertexShader,
     fragmentShader: starGlowFragmentShader,
@@ -342,10 +343,10 @@ function buildScene(canvas: HTMLCanvasElement) {
   const fragData: { dir: THREE.Vector3; rotAxis: THREE.Vector3; speed: number }[] = []
 
   for (let i = 0; i < FRAG_COUNT; i++) {
-    // Create shard-like geometry
-    const w = 0.15 + Math.random() * 0.3
-    const h = 0.1 + Math.random() * 0.25
-    const d = 0.02 + Math.random() * 0.04
+    // Create shard-like geometry — big enough to see
+    const w = 0.4 + Math.random() * 0.8
+    const h = 0.3 + Math.random() * 0.6
+    const d = 0.05 + Math.random() * 0.1
     const geo = new THREE.BoxGeometry(w, h, d)
     // Skew vertices to make shard-like shapes
     const posAttr = geo.attributes.position
@@ -407,7 +408,7 @@ function buildScene(canvas: HTMLCanvasElement) {
     pPositions[i * 3] = 0
     pPositions[i * 3 + 1] = 0
     pPositions[i * 3 + 2] = 0
-    pSizes[i] = 0.3 + Math.random() * 2.0
+    pSizes[i] = 0.8 + Math.random() * 4.0  // Much larger particles
     pAlphas[i] = 0
 
     const c = palette[Math.floor(Math.random() * palette.length)]
@@ -467,14 +468,14 @@ function buildScene(canvas: HTMLCanvasElement) {
   }
 
   const STAR_CONFIGS = [
-    { pos: [0, 0, 0], color: COLORS.cyan, size: 0.6, activate: 0.45, label: 'Precision Performance',
-      orbits: [{ r: 4, speed: 0.15, count: 3, tilt: 0.1, planetColor: COLORS.cyan }] },
-    { pos: [-6, 2, -4], color: COLORS.magenta, size: 0.5, activate: 0.60, label: 'Social Engine',
-      orbits: [{ r: 3.5, speed: 0.12, count: 3, tilt: -0.15, planetColor: COLORS.magenta }] },
-    { pos: [5, -1.5, -5], color: COLORS.green, size: 0.45, activate: 0.75, label: 'Organic & Design',
+    { pos: [0, 0, 0], color: COLORS.cyan, size: 1.5, activate: 0.45, label: 'Precision Performance',
+      orbits: [{ r: 6, speed: 0.15, count: 3, tilt: 0.1, planetColor: COLORS.cyan }] },
+    { pos: [-8, 3, -3], color: COLORS.magenta, size: 1.2, activate: 0.60, label: 'Social Engine',
+      orbits: [{ r: 5, speed: 0.12, count: 3, tilt: -0.15, planetColor: COLORS.magenta }] },
+    { pos: [7, -2, -4], color: COLORS.green, size: 1.0, activate: 0.75, label: 'Organic & Design',
       orbits: [
-        { r: 3, speed: 0.10, count: 2, tilt: 0.2, planetColor: COLORS.green },
-        { r: 5, speed: 0.07, count: 3, tilt: -0.1, planetColor: COLORS.gold },
+        { r: 4.5, speed: 0.10, count: 2, tilt: 0.2, planetColor: COLORS.green },
+        { r: 7, speed: 0.07, count: 3, tilt: -0.1, planetColor: COLORS.gold },
       ] },
   ]
 
@@ -494,7 +495,7 @@ function buildScene(canvas: HTMLCanvasElement) {
     scene.add(coreMeshS)
 
     // Glow sphere (larger, additive)
-    const glowGeoS = new THREE.SphereGeometry(cfg.size * 4, 32, 32)
+    const glowGeoS = new THREE.SphereGeometry(cfg.size * 6, 32, 32)
     const glowMatS = new THREE.ShaderMaterial({
       vertexShader: starGlowVertexShader,
       fragmentShader: starGlowFragmentShader,
@@ -542,7 +543,7 @@ function buildScene(canvas: HTMLCanvasElement) {
 
       // Planets
       for (let pi = 0; pi < orbit.count; pi++) {
-        const plGeo = new THREE.SphereGeometry(0.12, 16, 16)
+        const plGeo = new THREE.SphereGeometry(0.35, 16, 16)
         const plMat = new THREE.MeshBasicMaterial({
           color: orbit.planetColor,
           transparent: true,
@@ -559,7 +560,7 @@ function buildScene(canvas: HTMLCanvasElement) {
         })
 
         // Planet glow
-        const plGlowGeo = new THREE.SphereGeometry(0.3, 8, 8)
+        const plGlowGeo = new THREE.SphereGeometry(0.8, 8, 8)
         const plGlowMat = new THREE.ShaderMaterial({
           vertexShader: starGlowVertexShader,
           fragmentShader: starGlowFragmentShader,
@@ -628,11 +629,12 @@ function buildScene(canvas: HTMLCanvasElement) {
 
     // ── Color bleed (bloom flash on activation) ──
     if (activated && ap < 1) {
-      bloomPass.strength = 1.3 + easeAp * 3.0 // bloom surges during activation
-      renderer.toneMappingExposure = 1.0 + easeAp * 0.5
-      coreMat.opacity = easeAp * 0.6
-      coreMesh.scale.setScalar(easeAp * 3)
-      eggLight.intensity = easeAp * 5
+      bloomPass.strength = 1.3 + easeAp * 4.0 // massive bloom surge
+      renderer.toneMappingExposure = 1.0 + easeAp * 1.0
+      coreMat.opacity = easeAp * 0.9
+      coreMesh.scale.setScalar(easeAp * 5)
+      coreMat.color.setHSL(0.5, 0.8, 0.5 + easeAp * 0.3)
+      eggLight.intensity = easeAp * 15
     }
 
     // ── Egg (appears during activation, driven by scroll after) ──
@@ -677,7 +679,7 @@ function buildScene(canvas: HTMLCanvasElement) {
         for (let i = 0; i < FRAG_COUNT; i++) {
           const mesh = fragGroup.children[i] as THREE.Mesh
           const fd = fragData[i]
-          const dist = 1.8 + crackP * 3.0
+          const dist = 3.5 + crackP * 5.0
           mesh.position.copy(fd.dir).multiplyScalar(dist)
           mesh.quaternion.setFromAxisAngle(fd.rotAxis, t * fd.speed * crackP)
           mesh.scale.setScalar(crackP)
@@ -712,7 +714,7 @@ function buildScene(canvas: HTMLCanvasElement) {
         for (let i = 0; i < FRAG_COUNT; i++) {
           const mesh = fragGroup.children[i] as THREE.Mesh
           const fd = fragData[i]
-          const dist = 4.8 + easeBang * 25
+          const dist = 8.5 + easeBang * 40
           mesh.position.copy(fd.dir).multiplyScalar(dist)
           mesh.quaternion.setFromAxisAngle(fd.rotAxis, t * fd.speed)
           mesh.scale.setScalar(Math.max(0, 1 - bangP * 1.5))
@@ -725,7 +727,7 @@ function buildScene(canvas: HTMLCanvasElement) {
         const alphaArr = pGeo.attributes.aAlpha as THREE.BufferAttribute
         for (let i = 0; i < PARTICLE_COUNT; i++) {
           const v = pVelocities[i]
-          posArr.setXYZ(i, v.x * easeBang * 18, v.y * easeBang * 18, v.z * easeBang * 18)
+          posArr.setXYZ(i, v.x * easeBang * 30, v.y * easeBang * 30, v.z * easeBang * 30)
           alphaArr.setX(i, Math.min(1, bangP * 4) * (0.3 + Math.random() * 0.7))
         }
         posArr.needsUpdate = true
@@ -752,7 +754,7 @@ function buildScene(canvas: HTMLCanvasElement) {
           const o = pOrbitData[i]
 
           // Exploded position
-          const expX = v.x * 18, expY = v.y * 18, expZ = v.z * 18
+          const expX = v.x * 30, expY = v.y * 30, expZ = v.z * 30
 
           // Orbit position
           const angle = o.angle + t * o.speed
@@ -777,7 +779,7 @@ function buildScene(canvas: HTMLCanvasElement) {
         const activePositions: THREE.Vector3[] = []
 
         starSystems.forEach((sys) => {
-          const vis = Math.max(0, Math.min(1, (p - sys.activateAt) / 0.06))
+          const vis = Math.max(0, Math.min(1, (p - sys.activateAt) / 0.04))
 
           if (vis > 0) {
             // Star core
@@ -786,11 +788,11 @@ function buildScene(canvas: HTMLCanvasElement) {
             sys.core.scale.setScalar(breathe * vis)
 
             // Star glow
-            ;(sys.glow.material as THREE.ShaderMaterial).uniforms.uIntensity.value = vis * 2.0
-            sys.glow.scale.setScalar(1 + vis * 0.3)
+            ;(sys.glow.material as THREE.ShaderMaterial).uniforms.uIntensity.value = vis * 3.0
+            sys.glow.scale.setScalar(1 + vis * 0.5)
 
             // Light
-            sys.light.intensity = vis * 8
+            sys.light.intensity = vis * 15
 
             activePositions.push(sys.position)
 
@@ -864,36 +866,36 @@ function buildScene(canvas: HTMLCanvasElement) {
     // ── Camera ──
     let camTarget: THREE.Vector3
     if (!activated || ap < 1) {
-      camTarget = new THREE.Vector3(0, 0, 8)
+      camTarget = new THREE.Vector3(0, 0, 12)
     } else if (p < 0.15) {
-      // Close on egg
-      camTarget = new THREE.Vector3(0, 0, 6)
+      // Close on egg — fills screen
+      camTarget = new THREE.Vector3(0, 0, 9)
     } else if (p < 0.30) {
-      // Pull back slightly, add camera shake during cracks
+      // Slight pullback, camera shake during cracks
       const crackP2 = (p - 0.15) / 0.15
-      const shake = Math.sin(t * 25) * crackP2 * 0.08
-      camTarget = new THREE.Vector3(shake, shake * 0.7, 6 + crackP2 * 3)
+      const shake = Math.sin(t * 25) * crackP2 * 0.15
+      camTarget = new THREE.Vector3(shake, shake * 0.7, 9 + crackP2 * 4)
     } else if (p < 0.45) {
-      // Bang — dramatic pullback
+      // Bang — dramatic pullback through particle field
       const bangP2 = (p - 0.30) / 0.15
-      camTarget = new THREE.Vector3(0, bangP2 * 2, 9 + bangP2 * 12)
+      camTarget = new THREE.Vector3(0, bangP2 * 3, 13 + bangP2 * 18)
     } else if (p < 0.60) {
-      // 1-star — center view
+      // 1-star — looking at first star system
       const sp = (p - 0.45) / 0.15
-      camTarget = new THREE.Vector3(sp * 0.5, 2 + sp * 1, 21 + sp * 3)
+      camTarget = new THREE.Vector3(sp * 1, 3 + sp * 2, 18 + sp * 5)
     } else if (p < 0.75) {
-      // 2-star — wider
+      // 2-star — wider to include both
       const sp = (p - 0.60) / 0.15
-      camTarget = new THREE.Vector3(-sp * 1.5, 3.5 + sp * 1, 24 + sp * 4)
+      camTarget = new THREE.Vector3(-sp * 2, 5 + sp * 2, 23 + sp * 5)
     } else if (p < 0.90) {
-      // 3-star — widest
+      // 3-star — full system view
       const sp = (p - 0.75) / 0.15
-      camTarget = new THREE.Vector3(sp * 0.5, 5 + sp * 1, 28 + sp * 5)
+      camTarget = new THREE.Vector3(sp * 1, 7 + sp * 2, 28 + sp * 7)
     } else {
       // Final panoramic
-      camTarget = new THREE.Vector3(0, 6.5, 35)
+      camTarget = new THREE.Vector3(0, 10, 40)
     }
-    camera.position.lerp(camTarget, 0.04)
+    camera.position.lerp(camTarget, 0.12)  // Faster camera response
     camera.lookAt(0, 0, 0)
 
     // ── Render via composer (bloom) ──
