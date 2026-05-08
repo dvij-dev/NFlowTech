@@ -6,7 +6,7 @@ import { siteConfig, footerServices, certifications } from '@/data/site-data'
 
 export function Footer() {
   return (
-    <footer className="relative border-t border-white/[0.06]">
+    <footer className="relative border-t border-white/[0.06]" role="contentinfo">
       {/* CTA banner */}
       <div className="section-pad py-20 md:py-28 text-center relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-navy-950 via-sky-500/5 to-navy-950" />

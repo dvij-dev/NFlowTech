@@ -3,6 +3,13 @@
 @tailwind utilities;
 
 /* ── Base ─────────────────────────────────────────────── */
+/* ── Focus indicators for keyboard accessibility ── */
+:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
@@ -57,7 +64,17 @@
            rounded-full border border-sky-400/20 text-sky-400 bg-sky-400/5;
   }
 
-  /* Primary action button */
+  /* Primary action button (header/nav) */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-full
+           bg-gradient-to-r from-sky-500 to-sky-600 text-white font-medium text-sm
+           hover:shadow-lg hover:shadow-sky-500/25 transition-all duration-300;
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+  }
+
+  /* Large action button (CTA sections) */
   .btn-gold {
     @apply inline-flex items-center gap-3 px-8 py-4 rounded-full
            bg-gradient-to-r from-sky-500 to-sky-600 text-white font-semibold

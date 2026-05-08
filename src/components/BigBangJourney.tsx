@@ -877,9 +877,11 @@ export default function BigBangJourney() {
       ref={containerRef}
       className="relative"
       style={{ height: phase === 'journey' ? '800vh' : '100vh' }}
+      role="region"
+      aria-label="Interactive 3D brand journey — scroll to explore NFlow's universe"
     >
       <div className="sticky top-0 h-screen w-full overflow-hidden">
-        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" aria-hidden="true" />
 
         {/* IDLE STATE */}
         {phase === 'idle' && (
