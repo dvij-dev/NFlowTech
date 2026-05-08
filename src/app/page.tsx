@@ -1,415 +1,50 @@
-'use client'
+import dynamic from 'next/dynamic';
 
-import { useEffect, useRef, useState } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { siteConfig, caseStudies, services, founder, teamMembers } from '@/data/site-data'
-import dynamic from 'next/dynamic'
+/* ═══════════════════════════════════════════════════════════════════════════
+   NFlow Technologies — Homepage
+   
+   Architecture (inspired by hatom.com analysis):
+   - Full-screen fixed WebGL canvas (CosmicJourney)
+   - 16 empty viewport-height scroll spacer divs
+   - Fixed content overlays that fade in/out based on scroll progress
+   - Custom canvas cursor with trail
+   - Camera-on-rails driven by scroll, mouse parallax for 3D feel
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-const BigBangJourney = dynamic(() => import('@/components/BigBangJourney'), {
+// Dynamic imports for client-only WebGL components
+const CosmicJourney = dynamic(() => import('@/components/CosmicJourney'), {
   ssr: false,
   loading: () => (
-    <div className="h-screen bg-white flex items-center justify-center">
-      {/* White screen — matches the journey's opening */}
+    <div className="fixed inset-0 bg-[#0a0612] flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-16 h-16 border border-white/10 rounded-full flex items-center justify-center mb-6 mx-auto">
+          <div className="w-2 h-2 bg-white/40 rounded-full animate-pulse" />
+        </div>
+        <p className="text-white/30 text-xs uppercase tracking-[0.3em]">Loading Experience</p>
+      </div>
     </div>
   ),
-})
-import MagneticButton from '@/components/MagneticButton'
-import TextReveal from '@/components/TextReveal'
-import RevealOnScroll from '@/components/RevealOnScroll'
+});
 
-gsap.registerPlugin(ScrollTrigger)
+const ScrollSections = dynamic(() => import('@/components/ScrollSections'), {
+  ssr: false,
+});
 
-/* ── Trust Marquee ────────────────────────────────── */
-function TrustMarquee() {
-  const partners = [
-    'Google Partner 2025', 'HubSpot Certified', 'Bing Ads Partner',
-    'Shopify Partner', 'Clutch Top Agency', 'Meta Business Partner',
-  ]
-  const tripled = [...partners, ...partners, ...partners]
+const CanvasCursor = dynamic(() => import('@/components/CanvasCursor'), {
+  ssr: false,
+});
 
-  return (
-    <div className="relative overflow-hidden py-8 border-y border-white/5">
-      <div className="animate-marquee flex whitespace-nowrap">
-        {tripled.map((p, i) => (
-          <span key={i} className="mx-12 text-sm tracking-widest uppercase text-white/20 font-mono">
-            {p}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/* ── Services Section ─────────────────────────────── */
-function ServicesSection() {
-  const sectionRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const cards = sectionRef.current?.querySelectorAll('.service-card')
-    if (!cards) return
-
-    cards.forEach((card, i) => {
-      gsap.fromTo(card,
-        { y: 60, opacity: 0 },
-        {
-          y: 0, opacity: 1, duration: 0.8,
-          delay: i * 0.15,
-          ease: 'power3.out',
-          scrollTrigger: { trigger: card, start: 'top 85%', toggleActions: 'play none none none' },
-        }
-      )
-    })
-  }, [])
-
-  const icons = ['⚡', '🎯', '🔍', '🎨']
-
-  return (
-    <section ref={sectionRef} className="relative py-32 px-8 md:px-16 lg:px-24">
-      <RevealOnScroll direction="up">
-        <p className="label mb-4">What We Do</p>
-        <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Four Pillars of Growth</h2>
-        <p className="text-white/40 max-w-2xl mb-16">
-          Each service pillar is built to compound on the others — precision
-          performance fuels organic reach, which feeds conversion design.
-        </p>
-      </RevealOnScroll>
-
-      <div className="grid md:grid-cols-2 gap-6">
-        {services.map((svc, i) => (
-          <div key={i} className="service-card glass-card-hover p-8 relative group">
-            <div className="text-3xl mb-4">{icons[i]}</div>
-            <span className="absolute top-6 right-8 text-white/10 font-mono text-sm">
-              {String(i + 1).padStart(2, '0')}
-            </span>
-            <h3 className="text-xl font-bold text-white mb-3">{svc.title}</h3>
-            <p className="text-white/40 text-sm mb-6 leading-relaxed">{svc.description}</p>
-            <div className="flex flex-wrap gap-2">
-              {svc.capabilities.map((item: string) => (
-                <span key={item} className="px-3 py-1 text-[10px] tracking-widest uppercase font-mono
-                  border border-sky-400/20 rounded-full text-sky-400/70">
-                  {item}
-                </span>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-/* ── Featured Case Studies ────────────────────────── */
-function CaseStudiesSection() {
-  const featured = caseStudies.slice(0, 6)
-
-  return (
-    <section className="relative py-32 px-8 md:px-16 lg:px-24">
-      <RevealOnScroll direction="up">
-        <p className="label mb-4">Success Stories</p>
-        <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-          Real Results,{' '}
-          <span className="gradient-text">Real Impact.</span>
-        </h2>
-        <p className="text-white/40 max-w-2xl mb-16">
-          Case studies showing how we turned campaigns into revenue engines.
-        </p>
-      </RevealOnScroll>
-
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {featured.map((cs, i) => (
-          <RevealOnScroll key={cs.slug} direction="up" delay={i * 0.1}>
-            <Link href={`/case-studies/${cs.slug}`} className="group block">
-              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-4">
-                {/* Animated gradient overlay matching brand */}
-                <div
-                  className="absolute inset-0 z-10 opacity-60 group-hover:opacity-40 transition-opacity duration-500"
-                  style={{
-                    background: `linear-gradient(135deg, ${cs.brandColor}cc 0%, ${cs.brandAccent}66 100%)`,
-                  }}
-                />
-                <Image
-                  src={cs.image}
-                  alt={cs.name}
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                {/* Brand color accent line */}
-                <div
-                  className="absolute bottom-0 left-0 right-0 h-1 z-20"
-                  style={{ background: `linear-gradient(90deg, ${cs.brandColor}, ${cs.brandAccent})` }}
-                />
-              </div>
-
-              {/* Tags */}
-              <div className="flex gap-2 mb-2">
-                <span className="text-[10px] tracking-widest uppercase font-mono text-white/40">
-                  {cs.industry}
-                </span>
-                <span className="text-white/20">·</span>
-                <span className="text-[10px] tracking-widest uppercase font-mono" style={{ color: cs.brandAccent }}>
-                  {cs.services}
-                </span>
-              </div>
-
-              {/* Name */}
-              <h3 className="text-lg font-semibold text-white group-hover:text-sky-400 transition-colors">
-                {cs.name}
-              </h3>
-
-              {/* Stats */}
-              <div className="flex gap-6 mt-3">
-                {cs.stats.slice(0, 2).map((stat, si) => (
-                  <div key={si}>
-                    <div className="text-lg font-bold text-white">{stat.value}</div>
-                    <div className="text-[10px] tracking-widest uppercase text-white/30">{stat.label}</div>
-                  </div>
-                ))}
-              </div>
-            </Link>
-          </RevealOnScroll>
-        ))}
-      </div>
-
-      <div className="text-center mt-16">
-        <MagneticButton>
-          <Link href="/case-studies"
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-full border border-white/10
-              text-white hover:bg-white/5 transition-all font-medium">
-            View All Case Studies
-            <span className="text-sky-400">→</span>
-          </Link>
-        </MagneticButton>
-      </div>
-    </section>
-  )
-}
-
-/* ── Founder Section ──────────────────────────────── */
-function FounderSection() {
-  return (
-    <section className="relative py-32 px-8 md:px-16 lg:px-24">
-      <div className="grid lg:grid-cols-2 gap-16 items-center">
-        <RevealOnScroll direction="left">
-          <div className="relative">
-            <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden">
-              <Image
-                src={founder.image}
-                alt={founder.name}
-                fill
-                className="object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-transparent to-transparent" />
-            </div>
-            {/* Floating stats card */}
-            <div className="absolute -bottom-6 -right-6 glass-card p-6 animate-float">
-              <div className="text-3xl font-bold text-white">7.5X</div>
-              <div className="text-xs tracking-widest uppercase text-white/40">Avg Client ROAS</div>
-            </div>
-          </div>
-        </RevealOnScroll>
-
-        <RevealOnScroll direction="right">
-          <p className="label mb-4">The Visionary</p>
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            {founder.name}
-          </h2>
-          <p className="text-lg text-white/50 mb-4">{founder.role}</p>
-          <div className="space-y-4 text-white/40 leading-relaxed">
-            <p>
-              Started NFlow in 2018 with two people and a belief: data-driven marketing
-              can transform businesses of every size. Seven years and 138+ brands later,
-              that belief is proven every single day.
-            </p>
-            <p>
-              Under Nevil&apos;s leadership, NFlow has grown into a powerhouse team of 18+
-              specialists spanning two continents, with an 80% referral rate that speaks
-              louder than any award.
-            </p>
-          </div>
-          <div className="mt-8">
-            <MagneticButton>
-              <Link href="/about"
-                className="inline-flex items-center gap-3 px-8 py-4 rounded-full
-                  bg-gradient-to-r from-sky-500 to-sky-600 text-white font-medium
-                  hover:shadow-lg hover:shadow-sky-500/25 transition-all">
-                About Our Story
-                <span>→</span>
-              </Link>
-            </MagneticButton>
-          </div>
-        </RevealOnScroll>
-      </div>
-    </section>
-  )
-}
-
-/* ── Team Section ─────────────────────────────────── */
-function TeamSection() {
-  const sectionRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const cards = sectionRef.current?.querySelectorAll('.team-card')
-    if (!cards) return
-
-    cards.forEach((card, i) => {
-      gsap.fromTo(card,
-        { y: 40, opacity: 0 },
-        {
-          y: 0, opacity: 1, duration: 0.6,
-          delay: i * 0.05,
-          ease: 'power3.out',
-          scrollTrigger: { trigger: card, start: 'top 90%', toggleActions: 'play none none none' },
-        }
-      )
-    })
-  }, [])
-
-  return (
-    <section ref={sectionRef} className="relative py-32 px-8 md:px-16 lg:px-24">
-      <RevealOnScroll direction="up">
-        <p className="label mb-4">Our Team</p>
-        <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-          18+ Specialists,{' '}
-          <span className="gradient-text">Two Continents.</span>
-        </h2>
-        <p className="text-white/40 max-w-2xl mb-16">
-          Every team member is a specialist in their craft — from PPC and SEO
-          to creative design and business development.
-        </p>
-      </RevealOnScroll>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
-        {teamMembers.map((member, i) => (
-          <div key={i} className="team-card group text-center">
-            <div className="relative w-full aspect-square rounded-2xl overflow-hidden mb-3
-              border border-white/[0.06] group-hover:border-sky-400/30 transition-all duration-500">
-              <Image
-                src={member.image}
-                alt={member.name}
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-navy-950/80 via-transparent to-transparent
-                opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            </div>
-            <h4 className="text-sm font-semibold text-white group-hover:text-sky-400 transition-colors">
-              {member.name}
-            </h4>
-            <p className="text-[10px] tracking-wider uppercase text-white/30 font-mono mt-0.5">
-              {member.role}
-            </p>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-/* ── Client Results Section ───────────────────────── */
-function ClientResults() {
-  const results = [
-    { brand: 'Seaside Marine', metric: '200+', label: 'Organic Keywords', category: 'SEO' },
-    { brand: 'KindDesigns', metric: '200K+', label: 'Total Reach', category: 'Social' },
-    { brand: 'Breezy Permits', metric: '5K+', label: 'Impressions/Month', category: 'SEO' },
-    { brand: 'OFW Law', metric: '150+', label: 'Leads/Month', category: 'PPC' },
-    { brand: 'MyCarrier TMS', metric: '45%', label: 'Lower CPA', category: 'Google Ads' },
-    { brand: 'Mango Superfoods', metric: '4.8X', label: 'ROAS Achieved', category: 'Meta Ads' },
-  ]
-  return (
-    <section className="relative py-20 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-r from-sky-500/[0.03] via-transparent to-sky-500/[0.03]" />
-      <div className="relative z-10 px-8 md:px-16 lg:px-24 mb-12 text-center">
-        <p className="font-mono text-sky-400/60 text-xs uppercase tracking-[0.3em] mb-3">Proven Results</p>
-        <h2 className="text-2xl md:text-3xl font-display font-bold text-white">
-          Real Impact, <span className="gradient-text">Real Numbers</span>
-        </h2>
-      </div>
-      <div className="relative z-10 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-px bg-white/[0.04]">
-        {results.map((r) => (
-          <div key={r.brand} className="bg-navy-950 p-6 text-center group hover:bg-white/[0.02] transition-colors">
-            <p className="text-2xl md:text-3xl font-bold text-white mb-1">{r.metric}</p>
-            <p className="text-xs text-slate-400 mb-3">{r.label}</p>
-            <p className="text-[10px] font-mono text-sky-400/50 uppercase tracking-wider">{r.brand} · {r.category}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-/* ── CTA Section ──────────────────────────────────── */
-function CTASection() {
-  return (
-    <section className="relative py-32 px-8 md:px-16 lg:px-24 text-center overflow-hidden">
-      {/* Background glow */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-[600px] h-[600px] rounded-full bg-sky-500/5 blur-[120px]" />
-      </div>
-
-      <div className="relative z-10">
-        <TextReveal className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-8 max-w-4xl mx-auto leading-tight">
-          Ready to become the next success story?
-        </TextReveal>
-        <RevealOnScroll direction="up" delay={0.3}>
-          <p className="text-white/40 text-lg max-w-xl mx-auto mb-10">
-            Join 138+ brands that chose data-driven growth over guesswork.
-            Your transformation starts with a conversation.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <MagneticButton>
-              <Link href="/contact"
-                className="inline-flex items-center gap-3 px-10 py-5 rounded-full
-                  bg-gradient-to-r from-sky-500 to-sky-600 text-white font-semibold text-lg
-                  hover:shadow-xl hover:shadow-sky-500/25 transition-all">
-                Get Free Consultation
-                <span>→</span>
-              </Link>
-            </MagneticButton>
-            <MagneticButton>
-              <Link href="/case-studies"
-                className="inline-flex items-center gap-3 px-10 py-5 rounded-full
-                  border border-white/10 text-white font-medium text-lg
-                  hover:bg-white/5 transition-all">
-                View Success Stories
-              </Link>
-            </MagneticButton>
-          </div>
-        </RevealOnScroll>
-      </div>
-    </section>
-  )
-}
-
-/* ── Main Page ────────────────────────────────────── */
 export default function Home() {
   return (
-    <main>
-      {/* The Big Bang — THE homepage opening. No hero before it. */}
-      <BigBangJourney />
-
-      {/* Trust Marquee */}
-      <TrustMarquee />
-
-      {/* Services */}
-      <ServicesSection />
-
-      {/* Case Studies */}
-      <CaseStudiesSection />
-
-      {/* Founder */}
-      <FounderSection />
-
-      {/* Team */}
-      <TeamSection />
-
-      {/* Client Results */}
-      <ClientResults />
-
-      {/* CTA */}
-      <CTASection />
+    <main className="bg-[#0a0612] min-h-screen" style={{ cursor: 'none' }}>
+      {/* WebGL Background — fixed canvas */}
+      <CosmicJourney />
+      
+      {/* Scroll Sections + Content Overlays */}
+      <ScrollSections />
+      
+      {/* Custom Cursor */}
+      <CanvasCursor />
     </main>
-  )
+  );
 }
