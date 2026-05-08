@@ -669,59 +669,59 @@ export default function CosmicJourney() {
       (ring as any)._bloomPair = bloomRing;
     }
 
-    // ─── Floating Crystal Shards ────────────────────────────────────
-    const shardCount = 12;
-    const shards: THREE.Mesh[] = [];
-    const shardGroup = new THREE.Group();
-    scene.add(shardGroup);
-    const bloomShardGroup = new THREE.Group();
-    bloomScene.add(bloomShardGroup);
+    // ─── Orbital Sparkle Particles (replacing crude mesh shards) ───
+    const sparkleCount = 40;
+    const sparklePositions = new Float32Array(sparkleCount * 3);
+    const sparkleSizes = new Float32Array(sparkleCount);
+    const sparkleOrbitData: { theta: number; phi: number; r: number; speed: number }[] = [];
 
-    for (let i = 0; i < shardCount; i++) {
-      const scale = 0.015 + Math.random() * 0.03;
-      const shardGeo = new THREE.OctahedronGeometry(scale, 1); // 1 subdivision for smoother
-      const hue = 0.55 + Math.random() * 0.15; // Cyan-blue range
-      const shardMat = new THREE.MeshPhysicalMaterial({
-        color: new THREE.Color().setHSL(hue, 0.7, 0.7),
-        metalness: 0.9,
-        roughness: 0.05,
-        transparent: true,
-        opacity: 0.5,
-        emissive: new THREE.Color().setHSL(hue, 0.8, 0.4),
-        emissiveIntensity: 0.6,
-      });
-      const shard = new THREE.Mesh(shardGeo, shardMat);
-      
-      // Position around orb — keep away from camera (z < 2)
+    for (let i = 0; i < sparkleCount; i++) {
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
-      const r = 1.5 + Math.random() * 2.5;
-      let px = r * Math.sin(phi) * Math.cos(theta);
-      let py = r * Math.sin(phi) * Math.sin(theta);
-      let pz = r * Math.cos(phi);
-      // Push away from camera line of sight (z > 2 means between orb and camera)
-      if (pz > 1.0) pz = -pz;
-      shard.position.set(px, py, pz);
-      shard.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
-      
-      // Store orbit data
-      (shard as any)._orbit = { theta, phi, r, speed: 0.1 + Math.random() * 0.2 };
-      
-      shardGroup.add(shard);
-      shards.push(shard);
-      
-      // Bloom pair
-      const bloomShardMat = new THREE.MeshBasicMaterial({
-        color: new THREE.Color().setHSL(hue, 1.0, 0.5),
-        transparent: true,
-        opacity: 0.1,
-      });
-      const bloomShard = new THREE.Mesh(shardGeo.clone(), bloomShardMat);
-      bloomShard.position.copy(shard.position);
-      bloomShard.rotation.copy(shard.rotation);
-      bloomShardGroup.add(bloomShard);
-      (shard as any)._bloomPair = bloomShard;
+      const r = 1.2 + Math.random() * 3.0;
+      sparklePositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      sparklePositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      sparklePositions[i * 3 + 2] = r * Math.cos(phi);
+      sparkleSizes[i] = 0.8 + Math.random() * 2.0;
+      sparkleOrbitData.push({ theta, phi, r, speed: 0.05 + Math.random() * 0.15 });
     }
+
+    const sparkleGeometry = new THREE.BufferGeometry();
+    sparkleGeometry.setAttribute('position', new THREE.BufferAttribute(sparklePositions, 3));
+    sparkleGeometry.setAttribute('aSize', new THREE.BufferAttribute(sparkleSizes, 1));
+
+    const sparkleMaterial = new THREE.ShaderMaterial({
+      vertexShader: `
+        attribute float aSize;
+        varying float vAlpha;
+        void main() {
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = aSize * (30.0 / -mvPosition.z);
+          gl_PointSize = clamp(gl_PointSize, 0.5, 4.0);
+          vAlpha = 1.0 / (-mvPosition.z * 0.3 + 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying float vAlpha;
+        void main() {
+          float d = length(gl_PointCoord - 0.5) * 2.0;
+          if (d > 1.0) discard;
+          float glow = exp(-d * d * 3.0);
+          vec3 color = mix(vec3(0.5, 0.8, 1.0), vec3(1.0), glow);
+          gl_FragColor = vec4(color, glow * vAlpha * 0.6);
+        }
+      `,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      fog: false,
+    });
+
+    const sparklePoints = new THREE.Points(sparkleGeometry, sparkleMaterial);
+    scene.add(sparklePoints);
+    // Placeholder for animation loop compatibility
+    const shards: THREE.Mesh[] = [];
 
     // ─── Dust Particles ─────────────────────────────────────────────
     const dustCount = 800;
@@ -834,7 +834,7 @@ export default function CosmicJourney() {
       starPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       starPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       starPositions[i * 3 + 2] = r * Math.cos(phi);
-      starSizes[i] = 0.2 + Math.random() * 0.8;
+      starSizes[i] = 0.5 + Math.random() * 2.0;
       // Mostly white with occasional color
       if (Math.random() < 0.1) {
         const sc = dustPalette[Math.floor(Math.random() * dustPalette.length)];
@@ -856,9 +856,40 @@ export default function CosmicJourney() {
     starGeometry.setAttribute('aPhase', new THREE.BufferAttribute(new Float32Array(starCount).map(() => Math.random() * 6.28), 1));
     starGeometry.setAttribute('aColor', new THREE.BufferAttribute(starColors, 3));
 
+    const starVertexShader = `
+      attribute float aSize;
+      attribute vec3 aColor;
+      varying vec3 vColor;
+      varying float vAlpha;
+      uniform float uTime;
+      
+      void main() {
+        vColor = aColor;
+        vec3 pos = position;
+        // Gentle twinkle
+        float twinkle = sin(uTime * 0.5 + position.x * 10.0) * 0.3 + 0.7;
+        
+        vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+        gl_PointSize = aSize * (50.0 / -mvPosition.z);
+        gl_PointSize = clamp(gl_PointSize, 0.5, 3.0);
+        vAlpha = twinkle;
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `;
+    const starFragmentShader = `
+      varying vec3 vColor;
+      varying float vAlpha;
+      void main() {
+        vec2 center = gl_PointCoord - 0.5;
+        float d = length(center);
+        float alpha = smoothstep(0.5, 0.0, d) * vAlpha;
+        gl_FragColor = vec4(vColor, alpha);
+      }
+    `;
+
     const starMaterial = new THREE.ShaderMaterial({
-      vertexShader: particleVertexShader,
-      fragmentShader: particleFragmentShader,
+      vertexShader: starVertexShader,
+      fragmentShader: starFragmentShader,
       uniforms: {
         uTime: { value: 0 },
         uScrollProgress: { value: 0 },
@@ -1018,25 +1049,17 @@ export default function CosmicJourney() {
         }
       });
 
-      // ── Crystal shard orbits ──
-      shards.forEach((shard) => {
-        const orb = (shard as any)._orbit;
-        orb.theta += orb.speed * 0.01;
-        orb.phi += orb.speed * 0.005;
-        shard.position.set(
-          orb.r * Math.sin(orb.phi) * Math.cos(orb.theta),
-          orb.r * Math.sin(orb.phi) * Math.sin(orb.theta),
-          orb.r * Math.cos(orb.phi)
-        );
-        shard.rotation.x += 0.01;
-        shard.rotation.y += 0.015;
-        // Sync bloom pair
-        const bp = (shard as any)._bloomPair;
-        if (bp) {
-          bp.position.copy(shard.position);
-          bp.rotation.copy(shard.rotation);
-        }
-      });
+      // ── Sparkle orbits ──
+      const posArr = sparkleGeometry.attributes.position.array as Float32Array;
+      for (let i = 0; i < sparkleCount; i++) {
+        const orb = sparkleOrbitData[i];
+        orb.theta += orb.speed * 0.008;
+        orb.phi += orb.speed * 0.003;
+        posArr[i * 3] = orb.r * Math.sin(orb.phi) * Math.cos(orb.theta);
+        posArr[i * 3 + 1] = orb.r * Math.sin(orb.phi) * Math.sin(orb.theta);
+        posArr[i * 3 + 2] = orb.r * Math.cos(orb.phi);
+      }
+      sparkleGeometry.attributes.position.needsUpdate = true;
 
       // ── Dust particles ──
       dustMaterial.uniforms.uTime.value = time;
