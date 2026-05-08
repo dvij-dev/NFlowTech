@@ -472,6 +472,7 @@ function buildScene(canvas: HTMLCanvasElement) {
     if (activated && ap >= 1) {
       if (p < 0.15) {
         // ── EGG ENERGY BUILDING ──
+        eggShell.visible = true; eggWire.visible = true; eggCore.visible = true; eggGlow.visible = true
         const ep = p / 0.15 // 0→1
         const pulse = 0.95 + 0.05 * Math.sin(t * (3 + ep * 5))
 
@@ -498,6 +499,7 @@ function buildScene(canvas: HTMLCanvasElement) {
 
       } else if (p < 0.30) {
         // ── CRACKING ──
+        eggShell.visible = true; eggWire.visible = true; eggCore.visible = true; eggGlow.visible = true
         const cp = (p - 0.15) / 0.15 // 0→1
         const shake = Math.sin(t * 30) * cp * 0.08
 
@@ -545,17 +547,29 @@ function buildScene(canvas: HTMLCanvasElement) {
         const bp = (p - 0.30) / 0.15 // 0→1
         const eBp = 1 - Math.pow(1 - bp, 2)
 
-        // Egg dissolves FAST
-        const eggFade = Math.max(0, 1 - bp * 5) // gone by 20% into bang
-        eggShellMat.opacity = 0.5 * eggFade
-        eggShell.scale.setScalar(1.2 + bp * 3)
-        eggWireMat.opacity = 0.6 * eggFade
-        eggWire.scale.setScalar(1.2 + bp * 3)
-        eggCoreMat.opacity = eggFade * 0.5
-        eggCore.scale.setScalar(2.0 + bp * 5)
-        eggGlow.material.opacity = Math.max(0, 0.8 - bp * 2)
-        eggGlow.scale.setScalar(14 + bp * 10)
-        eggLight.intensity = Math.max(0, 28 * (1 - bp * 2))
+        // Egg dissolves FAST — hide after 30% through bang
+        if (bp > 0.3) {
+          eggShell.visible = false
+          eggWire.visible = false
+          eggCore.visible = false
+          eggGlow.visible = false
+          eggLight.intensity = 0
+        } else {
+          eggShell.visible = true
+          eggWire.visible = true
+          eggCore.visible = true
+          eggGlow.visible = true
+          const eggFade = 1 - bp * 3.3 // 0→1 over first 30%
+          eggShellMat.opacity = 0.5 * eggFade
+          eggShell.scale.setScalar(1.2 + bp * 5)
+          eggWireMat.opacity = 0.4 * eggFade
+          eggWire.scale.setScalar(1.2 + bp * 5)
+          eggCoreMat.opacity = eggFade
+          eggCore.scale.setScalar(2.0 + bp * 8)
+          eggGlow.material.opacity = eggFade * 0.6
+          eggGlow.scale.setScalar(12 + bp * 15)
+          eggLight.intensity = 20 * eggFade
+        }
 
         // Fragments fly far and fade
         fragGroup.visible = bp < 0.7
@@ -588,38 +602,45 @@ function buildScene(canvas: HTMLCanvasElement) {
 
       } else {
         // ── POST-BANG: nebula settles, stars emerge ──
-        eggShellMat.opacity = 0
-        eggWireMat.opacity = 0
-        eggCoreMat.opacity = 0
-        eggGlow.material.opacity = 0
+        // FORCE egg objects invisible (opacity=0 alone doesn't work with Phong)
+        eggShell.visible = false
+        eggWire.visible = false
+        eggCore.visible = false
+        eggGlow.visible = false
         eggLight.intensity = 0
         fragGroup.visible = false
 
-        bloomPass.strength = 0.8  // CONTROLLED — no more overbloom
-        renderer.toneMappingExposure = 1.1
+        bloomPass.strength = 0.6  // VERY controlled bloom for star clarity
+        renderer.toneMappingExposure = 1.0
 
-        // Particles transition from explosion to sparse nebula
+        // Particles: only show a FRACTION as subtle dust, rest hidden
         particles.visible = true
         const posAttr = partGeo.attributes.position as THREE.BufferAttribute
         const alphaAttr = partGeo.attributes.aAlpha as THREE.BufferAttribute
         const settleP = Math.min(1, (p - 0.45) / 0.10)
+        const VISIBLE_PARTICLES = 600 // Only 600 of 4000 visible as dust
 
         for (let i = 0; i < PART_N; i++) {
-          const v = pVel[i]
-          const o = pOrbit[i]
-          const ex = v.x * 20, ey = v.y * 20, ez = v.z * 20
-          const angle = o.a + t * o.sp
-          const ox = Math.cos(angle) * o.r
-          const oy = o.y + Math.sin(angle) * o.r * o.tilt
-          const oz = Math.sin(angle) * o.r
-          posAttr.setXYZ(i,
-            ex + (ox - ex) * settleP,
-            ey + (oy - ey) * settleP,
-            ez + (oz - ez) * settleP
-          )
-          // Much lower alpha to prevent washout
-          const fade = p > 0.85 ? Math.max(0.01, 1 - (p - 0.85) / 0.15) : 1
-          alphaAttr.setX(i, (0.03 + Math.random() * 0.08) * fade)
+          if (i < VISIBLE_PARTICLES) {
+            const v = pVel[i]
+            const o = pOrbit[i]
+            const ex = v.x * 20, ey = v.y * 20, ez = v.z * 20
+            const angle = o.a + t * o.sp
+            const ox = Math.cos(angle) * o.r
+            const oy = o.y + Math.sin(angle) * o.r * o.tilt
+            const oz = Math.sin(angle) * o.r
+            posAttr.setXYZ(i,
+              ex + (ox - ex) * settleP,
+              ey + (oy - ey) * settleP,
+              ez + (oz - ez) * settleP
+            )
+            // Very faint dust particles
+            const fade = p > 0.85 ? Math.max(0.01, 1 - (p - 0.85) / 0.15) : 1
+            alphaAttr.setX(i, (0.02 + Math.random() * 0.04) * fade)
+          } else {
+            // Hide remaining particles
+            alphaAttr.setX(i, 0)
+          }
         }
         posAttr.needsUpdate = true
         alphaAttr.needsUpdate = true
@@ -634,14 +655,14 @@ function buildScene(canvas: HTMLCanvasElement) {
             const breathe = 1 + Math.sin(t * 2.5) * 0.06
             ;(sys.core.material as THREE.MeshBasicMaterial).opacity = vis
             sys.core.scale.setScalar(breathe * vis)
-            sys.glow.material.opacity = vis * 0.7
-            sys.light.intensity = vis * 8
+            sys.glow.material.opacity = vis * 0.6
+            sys.light.intensity = vis * 6
 
             activePos.push(sys.pos)
 
-            // Rings
+            // Rings — brighter so they're visible
             sys.rings.forEach(ring => {
-              ;(ring.material as THREE.LineBasicMaterial).opacity = vis * 0.25
+              ;(ring.material as THREE.LineBasicMaterial).opacity = vis * 0.5
             })
 
             // Planets orbit
@@ -662,7 +683,7 @@ function buildScene(canvas: HTMLCanvasElement) {
 
               const pg = sys.planetGlows[pi]
               pg.position.copy(pl.position)
-              pg.material.opacity = pVis * 0.5
+              pg.material.opacity = pVis * 0.4
             })
           } else {
             ;(sys.core.material as THREE.MeshBasicMaterial).opacity = 0
@@ -684,7 +705,7 @@ function buildScene(canvas: HTMLCanvasElement) {
             }
           }
           beamGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts), 3))
-          beamMat.opacity = 0.12
+          beamMat.opacity = 0.15
         } else {
           beamMat.opacity = 0
         }
