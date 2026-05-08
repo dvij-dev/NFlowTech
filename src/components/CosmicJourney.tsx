@@ -678,29 +678,30 @@ export default function CosmicJourney() {
     bloomScene.add(bloomShardGroup);
 
     for (let i = 0; i < shardCount; i++) {
-      const scale = 0.02 + Math.random() * 0.06;
-      const shardGeo = new THREE.OctahedronGeometry(scale, 0);
-      const hue = 0.6 + Math.random() * 0.2; // Purple-blue range
+      const scale = 0.015 + Math.random() * 0.03;
+      const shardGeo = new THREE.OctahedronGeometry(scale, 1); // 1 subdivision for smoother
+      const hue = 0.55 + Math.random() * 0.15; // Cyan-blue range
       const shardMat = new THREE.MeshPhysicalMaterial({
-        color: new THREE.Color().setHSL(hue, 0.8, 0.6),
+        color: new THREE.Color().setHSL(hue, 0.7, 0.7),
         metalness: 0.9,
-        roughness: 0.1,
+        roughness: 0.05,
         transparent: true,
-        opacity: 0.7,
-        emissive: new THREE.Color().setHSL(hue, 1.0, 0.3),
-        emissiveIntensity: 0.5,
+        opacity: 0.5,
+        emissive: new THREE.Color().setHSL(hue, 0.8, 0.4),
+        emissiveIntensity: 0.6,
       });
       const shard = new THREE.Mesh(shardGeo, shardMat);
       
-      // Random position in shell around orb
+      // Position around orb — keep away from camera (z < 2)
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
-      const r = 3.0 + Math.random() * 5.0;
-      shard.position.set(
-        r * Math.sin(phi) * Math.cos(theta),
-        r * Math.sin(phi) * Math.sin(theta),
-        r * Math.cos(phi)
-      );
+      const r = 1.5 + Math.random() * 2.5;
+      let px = r * Math.sin(phi) * Math.cos(theta);
+      let py = r * Math.sin(phi) * Math.sin(theta);
+      let pz = r * Math.cos(phi);
+      // Push away from camera line of sight (z > 2 means between orb and camera)
+      if (pz > 1.0) pz = -pz;
+      shard.position.set(px, py, pz);
       shard.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
       
       // Store orbit data
@@ -865,6 +866,7 @@ export default function CosmicJourney() {
       transparent: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
+      fog: false,
     });
 
     const starPoints = new THREE.Points(starGeometry, starMaterial);

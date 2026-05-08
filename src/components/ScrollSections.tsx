@@ -245,7 +245,10 @@ export default function ScrollSections() {
 
           let opacity = 0;
           if (scrollProgress >= fadeInStart && scrollProgress <= fadeOutEnd) {
-            if (scrollProgress < fadeInEnd) {
+            if (block.startProgress === 0 && scrollProgress < fadeInEnd) {
+              // Hero block: visible immediately, no fade-in
+              opacity = 1;
+            } else if (scrollProgress < fadeInEnd) {
               opacity = (scrollProgress - fadeInStart) / (fadeInEnd - fadeInStart);
             } else if (scrollProgress > fadeOutStart) {
               opacity = 1 - (scrollProgress - fadeOutStart) / (fadeOutEnd - fadeOutStart);
