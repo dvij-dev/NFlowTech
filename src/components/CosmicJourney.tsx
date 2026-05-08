@@ -157,8 +157,8 @@ void main() {
   color += uGlowColor * backlight;
   color += uGlowColor * uGlowIntensity * (0.5 + 0.5 * sin(uTime * 1.5));
   
-  // Phase-based intensity
-  float alpha = smoothstep(0.0, 0.15, uPhase) * (1.0 - smoothstep(0.35, 0.5, uPhase));
+  // Phase-based intensity — visible from the start, fades out in later phases
+  float alpha = (0.6 + 0.4 * smoothstep(0.0, 0.15, uPhase)) * (1.0 - smoothstep(0.35, 0.5, uPhase));
   
   gl_FragColor = vec4(color, alpha);
 }
@@ -473,7 +473,7 @@ export default function CosmicJourney() {
       uniforms: {
         tScene: { value: sceneRT.texture },
         tBloom: { value: bloomRT2.texture },
-        uBloomStrength: { value: 0.25 },
+        uBloomStrength: { value: 0.45 },
         uTint: { value: new THREE.Vector3(0.6, 0.4, 1.0) },
         uTintStrength: { value: 0.06 },
         uVignetteIntensity: { value: 0.35 },
@@ -565,30 +565,33 @@ export default function CosmicJourney() {
     scene.add(hemiLight);
 
     // ─── Copy lights to bloom scene ─────────────────────────────────
-    const bloomAmbient = new THREE.AmbientLight(0x1a1030, 0.1);
+    const bloomAmbient = new THREE.AmbientLight(0x1a1030, 0.15);
     bloomScene.add(bloomAmbient);
-    const bloomKey = new THREE.DirectionalLight(0xffeedd, 0.3);
+    const bloomKey = new THREE.DirectionalLight(0xffeedd, 0.5);
     bloomKey.position.copy(keyLight.position);
     bloomScene.add(bloomKey);
+    const bloomRim2 = new THREE.DirectionalLight(0x00f4ff, 0.3);
+    bloomRim2.position.copy(rimLight.position);
+    bloomScene.add(bloomRim2);
 
     // ─── Cosmic Egg / Orb ───────────────────────────────────────────
     const orbGeometry = new THREE.SphereGeometry(1.2, 128, 128);
     
     // Main orb (PBR)
     const orbMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x88ddff,
+      color: 0x99eeff,
       metalness: 0.0,
-      roughness: 0.1,
-      transmission: 0.85,
-      thickness: 0.8,
-      ior: 1.5,
+      roughness: 0.05,
+      transmission: 0.7,
+      thickness: 0.5,
+      ior: 1.45,
       clearcoat: 1.0,
-      clearcoatRoughness: 0.05,
-      envMapIntensity: 1.5,
-      emissive: 0x1a4466,
-      emissiveIntensity: 0.3,
+      clearcoatRoughness: 0.02,
+      envMapIntensity: 2.0,
+      emissive: 0x2288aa,
+      emissiveIntensity: 0.8,
       transparent: true,
-      opacity: 0.95,
+      opacity: 0.9,
     });
 
     const orbMesh = new THREE.Mesh(orbGeometry, orbMaterial);
@@ -609,10 +612,10 @@ export default function CosmicJourney() {
         uDiffuseColor: { value: new THREE.Color(0xb5fafa) },
         uFresnelColor: { value: new THREE.Color(0x94b9eb) },
         uFresnelPower: { value: 2.5 },
-        uFresnelIntensity: { value: 1.5 },
+        uFresnelIntensity: { value: 2.5 },
         uGlowColor: { value: new THREE.Color(0xffc06f) },
         uGlowColor2: { value: new THREE.Color(0x4444ff) },
-        uGlowIntensity: { value: 0.25 },
+        uGlowIntensity: { value: 0.5 },
         uPhase: { value: 0.0 },
       },
       transparent: true,
@@ -626,9 +629,9 @@ export default function CosmicJourney() {
     // Inner light orb (small bright core)
     const coreGeometry = new THREE.SphereGeometry(0.3, 32, 32);
     const coreMaterial = new THREE.MeshBasicMaterial({
-      color: 0xaaddff,
+      color: 0xccffff,
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.85,
     });
     const coreMesh = new THREE.Mesh(coreGeometry, coreMaterial);
     bloomScene.add(coreMesh);
@@ -639,13 +642,13 @@ export default function CosmicJourney() {
     for (let i = 0; i < ringCount; i++) {
       const ringGeo = new THREE.TorusGeometry(1.8 + i * 0.4, 0.015, 16, 100);
       const ringMat = new THREE.MeshPhysicalMaterial({
-        color: 0x94b9eb,
+        color: 0x88ccff,
         metalness: 0.8,
-        roughness: 0.2,
+        roughness: 0.1,
         transparent: true,
-        opacity: 0.4,
-        emissive: 0x94b9eb,
-        emissiveIntensity: 0.3,
+        opacity: 0.5,
+        emissive: 0x4488cc,
+        emissiveIntensity: 0.8,
       });
       const ring = new THREE.Mesh(ringGeo, ringMat);
       ring.rotation.x = Math.PI / 2 + (i - 1) * 0.4;
@@ -675,7 +678,7 @@ export default function CosmicJourney() {
     bloomScene.add(bloomShardGroup);
 
     for (let i = 0; i < shardCount; i++) {
-      const scale = 0.05 + Math.random() * 0.12;
+      const scale = 0.02 + Math.random() * 0.06;
       const shardGeo = new THREE.OctahedronGeometry(scale, 0);
       const hue = 0.6 + Math.random() * 0.2; // Purple-blue range
       const shardMat = new THREE.MeshPhysicalMaterial({
