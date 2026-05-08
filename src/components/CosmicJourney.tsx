@@ -1143,48 +1143,96 @@ export default function CosmicJourney() {
       // Each stage brings visually distinct elements and color palettes
       // ═══════════════════════════════════════════════════════════════
 
-      // Stage progress values (smooth transitions between stages)
-      const s1 = Math.min(1, progress / 0.18);                          // 0-18%:  Genesis
-      const s2 = Math.max(0, Math.min(1, (progress - 0.15) / 0.15));    // 15-30%: Awakening
-      const s3 = Math.max(0, Math.min(1, (progress - 0.30) / 0.15));    // 30-45%: Expansion
-      const s4 = Math.max(0, Math.min(1, (progress - 0.48) / 0.15));    // 48-63%: Intensity
-      const s5 = Math.max(0, Math.min(1, (progress - 0.65) / 0.15));    // 65-80%: Convergence
-      const s6 = Math.max(0, Math.min(1, (progress - 0.82) / 0.18));    // 82-100%: Transcendence
+      // Stage progress values — mapped to V15 content flow
+      // 0-10%: Hero, 10-20%: Stats, 20-32%: Services
+      // 32-46%: Case Study 1, 46-60%: CS2, 60-74%: CS3, 74-84%: CS4
+      // 84-92%: Approach, 92-100%: CTA
+      const sHero = Math.min(1, progress / 0.10);
+      const sStats = Math.max(0, Math.min(1, (progress - 0.10) / 0.10));
+      const sServices = Math.max(0, Math.min(1, (progress - 0.20) / 0.12));
+      const sCS = Math.max(0, Math.min(1, (progress - 0.32) / 0.52));  // 32-84%: case studies
+      const sApproach = Math.max(0, Math.min(1, (progress - 0.84) / 0.08));
+      const sCTA = Math.max(0, Math.min(1, (progress - 0.92) / 0.08));
+      
+      // Meaningful shorthand for orb structural stages
+      const s2 = sStats;
+      const s3 = sServices;
+      const s4 = Math.max(0, Math.min(1, (progress - 0.40) / 0.15));
+      const s5 = Math.max(0, Math.min(1, (progress - 0.65) / 0.15));
+      const s6 = sCTA;
 
-      // ── Orb evolution (DRAMATIC scale + color changes) ──
+      // ── Orb evolution — MEANINGFUL growth narrative ──
+      // The orb represents a business/brand growing through NFlow's work
       const orbBreath = 1.0 + Math.sin(time * 0.5) * 0.03;
       
-      // Scale: 1x → 1.3x → 1.8x → 2.2x → 1.6x → 2.5x
-      const orbScale = 1.0 + s2 * 0.3 + s3 * 0.5 + s4 * 0.4 - s5 * 0.6 + s6 * 0.9;
+      // Scale: small seed → growing → peak during case studies → grand finale
+      const orbScale = 1.0 + sStats * 0.2 + sServices * 0.3 + sCS * 0.7 + sCTA * 0.3;
       orbMesh.scale.setScalar(orbBreath * orbScale);
-      orbMesh.rotation.y = time * (0.05 + progress * 0.2);
-      orbMesh.rotation.x = Math.sin(time * 0.15) * (0.05 + s3 * 0.3);
+      orbMesh.rotation.y = time * (0.05 + progress * 0.15);
+      orbMesh.rotation.x = Math.sin(time * 0.15) * (0.05 + sServices * 0.2);
 
-      // Color palette: distinct per stage
+      // ── Brand-adaptive color system ──
+      // During case studies, the orb morphs to each client's brand color
+      // Helper: hex string → { h, s, l }
+      const hexToHSL = (hex: string) => {
+        const r = parseInt(hex.slice(1, 3), 16) / 255;
+        const g = parseInt(hex.slice(3, 5), 16) / 255;
+        const b = parseInt(hex.slice(5, 7), 16) / 255;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        const l = (max + min) / 2;
+        let h = 0, s = 0;
+        if (max !== min) {
+          const d = max - min;
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+          if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+          else if (max === g) h = ((b - r) / d + 2) / 6;
+          else h = ((r - g) / d + 4) / 6;
+        }
+        return { h, s, l };
+      };
+
+      // Read brand colors from ScrollSections (via window)
+      const brandAccent = (window as unknown as Record<string, unknown>).__nflow_brand_accent as string | null;
+      const brandColor = (window as unknown as Record<string, unknown>).__nflow_brand_color as string | null;
+      
+      // Default orb colors (NFlow identity: teal/sky)
       let orbH: number, orbS: number, orbL: number;
-      if (progress < 0.2) {
-        // Genesis: cool teal
-        orbH = 0.52; orbS = 0.4 + actSmooth * 0.2; orbL = 0.35 + actSmooth * 0.25;
-      } else if (progress < 0.35) {
-        // Awakening: teal → electric blue
-        const t = (progress - 0.2) / 0.15;
-        orbH = 0.52 + t * 0.08; orbS = 0.6 + t * 0.2; orbL = 0.4 + t * 0.15;
-      } else if (progress < 0.5) {
-        // Expansion: electric blue → warm gold
-        const t = (progress - 0.35) / 0.15;
-        orbH = 0.60 - t * 0.50; orbS = 0.8; orbL = 0.45 + t * 0.1;
-      } else if (progress < 0.65) {
-        // Intensity: gold → hot magenta
-        const t = (progress - 0.5) / 0.15;
-        orbH = 0.10 - t * 0.18 + (t > 0.5 ? 1.0 : 0); orbS = 0.85; orbL = 0.5;
-      } else if (progress < 0.82) {
-        // Convergence: magenta → deep violet
-        const t = (progress - 0.65) / 0.17;
-        orbH = 0.82 - t * 0.07; orbS = 0.7 + t * 0.1; orbL = 0.45 + t * 0.1;
+      
+      if (brandAccent && progress >= 0.32 && progress <= 0.84) {
+        // During case studies: smoothly morph toward the brand's accent color
+        const brand = hexToHSL(brandAccent);
+        
+        // Smooth transition strength — ramp in/out at boundaries
+        const csLocalProgress = (progress - 0.32) / 0.52;
+        const rampIn = Math.min(1, (progress - 0.32) / 0.04);
+        const rampOut = Math.min(1, (0.84 - progress) / 0.04);
+        const brandStrength = Math.min(rampIn, rampOut);
+        
+        // Lerp from NFlow teal toward brand color
+        const baseH = 0.52, baseS = 0.6, baseL = 0.5;
+        orbH = baseH + (brand.h - baseH) * brandStrength;
+        orbS = baseS + (brand.s - baseS) * brandStrength;
+        orbL = baseL + (brand.l - baseL) * brandStrength * 0.6; // keep it bright
+        orbL = Math.max(0.35, Math.min(0.65, orbL)); // clamp lightness
+      } else if (progress < 0.10) {
+        // Hero: mysterious dark teal (seed/potential)
+        orbH = 0.52; orbS = 0.3 + actSmooth * 0.2; orbL = 0.25 + actSmooth * 0.2;
+      } else if (progress < 0.20) {
+        // Stats: brightening teal (awakening)
+        const t = (progress - 0.10) / 0.10;
+        orbH = 0.52; orbS = 0.5 + t * 0.15; orbL = 0.4 + t * 0.1;
+      } else if (progress < 0.32) {
+        // Services: electric teal-blue (capability)
+        const t = (progress - 0.20) / 0.12;
+        orbH = 0.52 + t * 0.06; orbS = 0.65 + t * 0.15; orbL = 0.5;
+      } else if (progress < 0.92) {
+        // Approach: return to NFlow sky-blue
+        const t = (progress - 0.84) / 0.08;
+        orbH = 0.55; orbS = 0.6 + t * 0.1; orbL = 0.5 + t * 0.1;
       } else {
-        // Transcendence: violet → bright white-blue
-        const t = (progress - 0.82) / 0.18;
-        orbH = 0.58; orbS = 0.8 - t * 0.5; orbL = 0.55 + t * 0.35;
+        // CTA: bright, inviting white-blue
+        const t = (progress - 0.92) / 0.08;
+        orbH = 0.55; orbS = 0.7 - t * 0.4; orbL = 0.55 + t * 0.35;
       }
       
       (orbMaterial as THREE.MeshPhysicalMaterial).emissive.setHSL(orbH, orbS, orbL * 0.5);
