@@ -162,9 +162,73 @@ const CONTENT_BLOCKS: ContentBlock[] = [
     ),
   },
   {
-    id: 'approach',
+    id: 'case-study-1',
+    startProgress: 0.58,
+    endProgress: 0.68,
+    position: 'left',
+    content: (
+      <div className="max-w-lg">
+        <div className="text-xs uppercase tracking-[0.3em] text-amber-400/70 mb-4">Case Study</div>
+        <h2 className="text-3xl md:text-4xl font-light text-white mb-4"
+            style={{ letterSpacing: '-0.02em' }}>
+          E-Commerce ROAS<br />Transformation
+        </h2>
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          {[
+            { value: '8.2X', label: 'ROAS' },
+            { value: '340%', label: 'Revenue ↑' },
+            { value: '-42%', label: 'CPA ↓' },
+          ].map((s) => (
+            <div key={s.label} className="text-center">
+              <div className="text-2xl font-light text-white">{s.value}</div>
+              <div className="text-[10px] uppercase tracking-wider text-white/30 mt-1">{s.label}</div>
+            </div>
+          ))}
+        </div>
+        <p className="text-white/40 font-light leading-relaxed text-sm">
+          Google Ads + Meta Ads strategy overhaul for a D2C brand.
+          Feed optimization, audience restructuring, and creative testing
+          delivered record-breaking returns in 90 days.
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: 'case-study-2',
     startProgress: 0.68,
     endProgress: 0.78,
+    position: 'right',
+    content: (
+      <div className="max-w-lg text-right">
+        <div className="text-xs uppercase tracking-[0.3em] text-violet-400/70 mb-4">Case Study</div>
+        <h2 className="text-3xl md:text-4xl font-light text-white mb-4"
+            style={{ letterSpacing: '-0.02em' }}>
+          Lead Gen at<br />National Scale
+        </h2>
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          {[
+            { value: '12K+', label: 'Leads/mo' },
+            { value: '₹180', label: 'CPL' },
+            { value: '67%', label: 'Qual Rate' },
+          ].map((s) => (
+            <div key={s.label} className="text-center">
+              <div className="text-2xl font-light text-white">{s.value}</div>
+              <div className="text-[10px] uppercase tracking-wider text-white/30 mt-1">{s.label}</div>
+            </div>
+          ))}
+        </div>
+        <p className="text-white/40 font-light leading-relaxed text-sm">
+          Multi-platform lead acquisition across Google, Meta, and TikTok
+          for a fintech startup. Scaled from 500 to 12K leads/month
+          while maintaining quality thresholds.
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: 'approach',
+    startProgress: 0.78,
+    endProgress: 0.87,
     position: 'center',
     content: (
       <div className="text-center max-w-2xl mx-auto">
@@ -188,8 +252,8 @@ const CONTENT_BLOCKS: ContentBlock[] = [
   },
   {
     id: 'cta',
-    startProgress: 0.82,
-    endProgress: 0.95,
+    startProgress: 0.88,
+    endProgress: 0.98,
     position: 'center',
     content: (
       <div className="text-center max-w-xl mx-auto">

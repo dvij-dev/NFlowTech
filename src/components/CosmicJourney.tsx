@@ -579,17 +579,20 @@ export default function CosmicJourney() {
     // ─── Cosmic Egg / Orb ───────────────────────────────────────────
     const orbGeometry = new THREE.SphereGeometry(0.7, 128, 128);
     
-    // Main orb (PBR)
+    // Main orb (PBR — parameters matched from hatom.com's egg component)
     const orbMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x99eeff,
+      color: 0xb5fafa,       // hatom: diffuseColor "#b5fafa"
       metalness: 0.0,
-      roughness: 0.05,
+      roughness: 0.65,       // hatom: roughness 0.65
+      specularIntensity: 10, // hatom: specular 10
       transmission: 0.7,
-      thickness: 0.5,
-      ior: 1.45,
+      thickness: 1.0,        // hatom: transmission.thickness 1
+      ior: 1.04,             // hatom: transmission.ior 1.04
+      attenuationColor: new THREE.Color(0xffc78a), // hatom: attenuationColor
+      attenuationDistance: 1.7,
       clearcoat: 1.0,
       clearcoatRoughness: 0.02,
-      envMapIntensity: 2.0,
+      envMapIntensity: 2.0,  // hatom: environment.intensity 2
       emissive: 0x2288aa,
       emissiveIntensity: 0.8,
       transparent: true,
@@ -608,16 +611,16 @@ export default function CosmicJourney() {
       fragmentShader: orbFragmentShader,
       uniforms: {
         uTime: { value: 0 },
-        uDisplacementIntensity: { value: 0.07 },
-        uNoiseSpeed: { value: 0.3 },
-        uNoiseScale: { value: 3.0 },
-        uDiffuseColor: { value: new THREE.Color(0xb5fafa) },
-        uFresnelColor: { value: new THREE.Color(0x94b9eb) },
-        uFresnelPower: { value: 2.5 },
-        uFresnelIntensity: { value: 2.5 },
-        uGlowColor: { value: new THREE.Color(0xffc06f) },
-        uGlowColor2: { value: new THREE.Color(0x4444ff) },
-        uGlowIntensity: { value: 0.5 },
+        uDisplacementIntensity: { value: 0.07 },  // hatom: displacement.intensity 0.07
+        uNoiseSpeed: { value: 2.21 },              // hatom: displacement.noise.speed 2.21
+        uNoiseScale: { value: 5.0 },               // hatom: displacement.noise.size 5
+        uDiffuseColor: { value: new THREE.Color(0xb5fafa) },   // hatom egg
+        uFresnelColor: { value: new THREE.Color(0x94b9eb) },   // hatom fresnel.color
+        uFresnelPower: { value: 0.91 },                        // hatom fresnel.power
+        uFresnelIntensity: { value: 3.21 },                    // hatom fresnel.intensity
+        uGlowColor: { value: new THREE.Color(0xffc06f) },      // hatom glow.color
+        uGlowColor2: { value: new THREE.Color(0x4444ff) },     // hatom glow.color2
+        uGlowIntensity: { value: 1.5 },                        // hatom glow.intensity
         uPhase: { value: 0.0 },
       },
       transparent: true,
@@ -724,6 +727,105 @@ export default function CosmicJourney() {
     scene.add(sparklePoints);
     // Placeholder for animation loop compatibility
     const shards: THREE.Mesh[] = [];
+
+    // ─── Satellite Objects (emerge at different scroll stages) ──────
+    // These create visual "evolution" — new structures appear as you explore
+    const satelliteCount = 6;
+    const satellites: THREE.Mesh[] = [];
+    const satelliteOrbitData: { radius: number; speed: number; phase: number; tiltX: number; tiltZ: number; appearAt: number; scaleTarget: number }[] = [];
+
+    const satGeos = [
+      new THREE.IcosahedronGeometry(0.12, 0),
+      new THREE.OctahedronGeometry(0.14, 0),
+      new THREE.TetrahedronGeometry(0.11, 0),
+      new THREE.IcosahedronGeometry(0.16, 1),
+      new THREE.OctahedronGeometry(0.10, 0),
+      new THREE.IcosahedronGeometry(0.09, 2),
+    ];
+    const satHues = [0.55, 0.85, 0.10, 0.75, 0.0, 0.45];
+
+    for (let si = 0; si < satelliteCount; si++) {
+      const hue = satHues[si];
+      const satColor = new THREE.Color().setHSL(hue, 0.8, 0.5);
+      const satMat = new THREE.MeshPhysicalMaterial({
+        color: satColor,
+        emissive: satColor,
+        emissiveIntensity: 1.5,
+        metalness: 0.9,
+        roughness: 0.1,
+        transparent: true,
+        opacity: 0,
+      });
+      const satMesh = new THREE.Mesh(satGeos[si], satMat);
+      satMesh.scale.setScalar(0);
+      scene.add(satMesh);
+      satellites.push(satMesh);
+
+      // Bloom pair
+      const bloomSatMat = new THREE.MeshBasicMaterial({
+        color: satColor,
+        transparent: true,
+        opacity: 0,
+      });
+      const bloomSat = new THREE.Mesh(satGeos[si].clone(), bloomSatMat);
+      bloomScene.add(bloomSat);
+      (satMesh as any)._bloomPair = bloomSat;
+
+      satelliteOrbitData.push({
+        radius: 1.6 + si * 0.5,
+        speed: 0.2 + Math.random() * 0.3,
+        phase: Math.random() * Math.PI * 2,
+        tiltX: (Math.random() - 0.5) * 1.5,
+        tiltZ: (Math.random() - 0.5) * 1.5,
+        appearAt: 0.15 + si * 0.1, // stagger: 15%, 25%, 35%, 45%, 55%, 65%
+        scaleTarget: 0.8 + Math.random() * 0.6,
+      });
+    }
+
+    // ─── Energy Ring (particle ring that expands at 40% scroll) ─────
+    const energyRingCount = 200;
+    const energyRingPositions = new Float32Array(energyRingCount * 3);
+    const energyRingSizes = new Float32Array(energyRingCount);
+    for (let i = 0; i < energyRingCount; i++) {
+      const angle = (i / energyRingCount) * Math.PI * 2;
+      energyRingPositions[i * 3] = Math.cos(angle) * 2;
+      energyRingPositions[i * 3 + 1] = (Math.random() - 0.5) * 0.1;
+      energyRingPositions[i * 3 + 2] = Math.sin(angle) * 2;
+      energyRingSizes[i] = 0.5 + Math.random() * 1.5;
+    }
+    const energyRingGeo = new THREE.BufferGeometry();
+    energyRingGeo.setAttribute('position', new THREE.BufferAttribute(energyRingPositions, 3));
+    energyRingGeo.setAttribute('aSize', new THREE.BufferAttribute(energyRingSizes, 1));
+    const energyRingMat = new THREE.ShaderMaterial({
+      vertexShader: `
+        attribute float aSize;
+        varying float vAlpha;
+        void main() {
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = aSize * (25.0 / -mvPosition.z);
+          gl_PointSize = clamp(gl_PointSize, 0.5, 4.0);
+          vAlpha = 1.0 / (-mvPosition.z * 0.3 + 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying float vAlpha;
+        uniform vec3 uColor;
+        void main() {
+          float d = length(gl_PointCoord - 0.5) * 2.0;
+          if (d > 1.0) discard;
+          float glow = exp(-d * d * 3.0);
+          gl_FragColor = vec4(uColor, glow * vAlpha * 0.8);
+        }
+      `,
+      uniforms: { uColor: { value: new THREE.Color(0x00f4ff) } },
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const energyRingPoints = new THREE.Points(energyRingGeo, energyRingMat);
+    energyRingPoints.visible = false;
+    scene.add(energyRingPoints);
 
     // ─── Dust Particles ─────────────────────────────────────────────
     const dustCount = 800;
@@ -1036,148 +1138,234 @@ export default function CosmicJourney() {
       scene.fog = new THREE.FogExp2(colors.bg.getHex(), 0.015);
 
       // ═══════════════════════════════════════════════════════════════
-      // SCENE EVOLUTION — everything changes based on scroll + activation
-      // PRE-ACTIVATION: visible but muted/cool — shows outlines when inverted
-      // POST-ACTIVATION: vibrant, dramatic, full color
+      // ═══════════════════════════════════════════════════════════════
+      // SCENE EVOLUTION — Dramatic staged transformations through scroll
+      // Each stage brings visually distinct elements and color palettes
       // ═══════════════════════════════════════════════════════════════
 
-      // ── Orb evolution ──
-      const orbBreathScale = 1.0 + Math.sin(time * 0.5) * 0.03;
+      // Stage progress values (smooth transitions between stages)
+      const s1 = Math.min(1, progress / 0.18);                          // 0-18%:  Genesis
+      const s2 = Math.max(0, Math.min(1, (progress - 0.15) / 0.15));    // 15-30%: Awakening
+      const s3 = Math.max(0, Math.min(1, (progress - 0.30) / 0.15));    // 30-45%: Expansion
+      const s4 = Math.max(0, Math.min(1, (progress - 0.48) / 0.15));    // 48-63%: Intensity
+      const s5 = Math.max(0, Math.min(1, (progress - 0.65) / 0.15));    // 65-80%: Convergence
+      const s6 = Math.max(0, Math.min(1, (progress - 0.82) / 0.18));    // 82-100%: Transcendence
+
+      // ── Orb evolution (DRAMATIC scale + color changes) ──
+      const orbBreath = 1.0 + Math.sin(time * 0.5) * 0.03;
       
-      // Orb emissive: muted glow before → bright after
-      const orbEmissiveBase = 0.4 + actSmooth * (0.6 + progress * 2.0);
-      (orbMaterial as THREE.MeshPhysicalMaterial).emissiveIntensity = orbEmissiveBase;
-      // Opacity: semi-visible before → solid after
+      // Scale: 1x → 1.3x → 1.8x → 2.2x → 1.6x → 2.5x
+      const orbScale = 1.0 + s2 * 0.3 + s3 * 0.5 + s4 * 0.4 - s5 * 0.6 + s6 * 0.9;
+      orbMesh.scale.setScalar(orbBreath * orbScale);
+      orbMesh.rotation.y = time * (0.05 + progress * 0.2);
+      orbMesh.rotation.x = Math.sin(time * 0.15) * (0.05 + s3 * 0.3);
+
+      // Color palette: distinct per stage
+      let orbH: number, orbS: number, orbL: number;
+      if (progress < 0.2) {
+        // Genesis: cool teal
+        orbH = 0.52; orbS = 0.4 + actSmooth * 0.2; orbL = 0.35 + actSmooth * 0.25;
+      } else if (progress < 0.35) {
+        // Awakening: teal → electric blue
+        const t = (progress - 0.2) / 0.15;
+        orbH = 0.52 + t * 0.08; orbS = 0.6 + t * 0.2; orbL = 0.4 + t * 0.15;
+      } else if (progress < 0.5) {
+        // Expansion: electric blue → warm gold
+        const t = (progress - 0.35) / 0.15;
+        orbH = 0.60 - t * 0.50; orbS = 0.8; orbL = 0.45 + t * 0.1;
+      } else if (progress < 0.65) {
+        // Intensity: gold → hot magenta
+        const t = (progress - 0.5) / 0.15;
+        orbH = 0.10 - t * 0.18 + (t > 0.5 ? 1.0 : 0); orbS = 0.85; orbL = 0.5;
+      } else if (progress < 0.82) {
+        // Convergence: magenta → deep violet
+        const t = (progress - 0.65) / 0.17;
+        orbH = 0.82 - t * 0.07; orbS = 0.7 + t * 0.1; orbL = 0.45 + t * 0.1;
+      } else {
+        // Transcendence: violet → bright white-blue
+        const t = (progress - 0.82) / 0.18;
+        orbH = 0.58; orbS = 0.8 - t * 0.5; orbL = 0.55 + t * 0.35;
+      }
+      
+      (orbMaterial as THREE.MeshPhysicalMaterial).emissive.setHSL(orbH, orbS, orbL * 0.5);
+      (orbMaterial as THREE.MeshPhysicalMaterial).color.setHSL(orbH, orbS * 0.6, orbL + 0.15);
+      (orbMaterial as THREE.MeshPhysicalMaterial).emissiveIntensity = 0.4 + actSmooth * (0.8 + s3 * 1.5 + s4 * 2.0);
       (orbMaterial as THREE.MeshPhysicalMaterial).opacity = 0.5 + actSmooth * 0.4;
-      // Slight glass before → less glass after
-      (orbMaterial as THREE.MeshPhysicalMaterial).transmission = 0.5 - actSmooth * 0.2;
-      
-      // Color evolution through scroll journey
-      const orbHue = 0.52 + progress * 0.15; // teal → blue → purple
-      const orbSat = 0.3 + actSmooth * 0.2 + progress * 0.3;
-      const orbLum = 0.4 + actSmooth * 0.3;
-      (orbMaterial as THREE.MeshPhysicalMaterial).emissive.setHSL(orbHue, orbSat, orbLum * 0.4);
-      (orbMaterial as THREE.MeshPhysicalMaterial).color.setHSL(orbHue, 0.3 + actSmooth * 0.2, 0.6 + progress * 0.15);
-      
-      // Roughness: matte before → polished glass after
-      (orbMaterial as THREE.MeshPhysicalMaterial).roughness = 0.6 - actSmooth * 0.55 - progress * 0.03;
-      
-      // Scale grows through journey
-      const progressScale = 1.0 + progress * 0.3;
-      orbMesh.scale.setScalar(orbBreathScale * progressScale);
-      orbMesh.rotation.y = time * (0.05 + progress * 0.15);
-      orbMesh.rotation.x = Math.sin(time * 0.15) * (0.05 + progress * 0.15);
-      
-      // Glow shell — visible before, dramatic after
+      (orbMaterial as THREE.MeshPhysicalMaterial).transmission = 0.5 - actSmooth * 0.2 - s4 * 0.2;
+      (orbMaterial as THREE.MeshPhysicalMaterial).roughness = 0.6 - actSmooth * 0.5 - s3 * 0.05;
+
+      // ── Glow shell — dramatic evolution ──
       glowMaterial.uniforms.uTime.value = time;
       glowMaterial.uniforms.uPhase.value = progress;
-      glowMaterial.uniforms.uFresnelIntensity.value = 0.8 + actSmooth * (2.0 + progress * 3.0);
-      glowMaterial.uniforms.uGlowIntensity.value = 0.3 + actSmooth * (0.5 + progress * 1.2);
-      glowMaterial.uniforms.uDisplacementIntensity.value = 0.02 + actSmooth * (0.03 + progress * 0.1);
-      glowMesh.scale.setScalar(orbBreathScale * progressScale);
+      glowMaterial.uniforms.uFresnelIntensity.value = 0.8 + actSmooth * (2.0 + s3 * 3.0 + s4 * 4.0);
+      glowMaterial.uniforms.uGlowIntensity.value = 0.3 + actSmooth * (0.5 + s3 * 1.0 + s4 * 1.5);
+      glowMaterial.uniforms.uDisplacementIntensity.value = 0.02 + actSmooth * (0.03 + s3 * 0.08 + s4 * 0.15);
+      glowMesh.scale.setScalar(orbBreath * orbScale);
       glowMesh.rotation.copy(orbMesh.rotation);
       glowMesh.position.copy(orbMesh.position);
-      
-      // Glow color shifts through phases
-      const glowHue1 = 0.08 + progress * 0.3; // gold → purple
-      const glowHue2 = 0.6 + progress * 0.2;  // blue → violet
-      glowMaterial.uniforms.uGlowColor.value.setHSL(glowHue1, 0.9, 0.6);
-      glowMaterial.uniforms.uGlowColor2.value.setHSL(glowHue2, 0.8, 0.5);
-      
-      // Core pulse — dim glow before, bright pulsing after
+      glowMaterial.uniforms.uGlowColor.value.setHSL(orbH + 0.05, 0.9, 0.6);
+      glowMaterial.uniforms.uGlowColor2.value.setHSL(orbH + 0.2, 0.8, 0.5);
+
+      // ── Core pulse — grows dramatically through stages ──
       const corePulse = 0.3 + actSmooth * (0.5 + Math.sin(time * 2) * 0.2);
-      const coreScale = corePulse * (0.2 + progress * 0.2);
+      const coreScale = corePulse * (0.15 + s2 * 0.15 + s4 * 0.3 + s6 * 0.4);
       coreMesh.scale.setScalar(Math.max(0.08, coreScale));
       coreMesh.position.copy(orbMesh.position);
-      (coreMaterial as any).opacity = 0.3 + actSmooth * (0.4 + progress * 0.3);
-      // Core color evolves
-      const coreColor = new THREE.Color();
-      coreColor.setHSL(0.5 + progress * 0.1, 0.3, 0.85 + actSmooth * 0.1);
-      (coreMaterial as THREE.MeshBasicMaterial).color.copy(coreColor);
+      (coreMaterial as any).opacity = 0.3 + actSmooth * (0.4 + s3 * 0.2 + s6 * 0.1);
+      (coreMaterial as THREE.MeshBasicMaterial).color.setHSL(orbH, 0.3, 0.85 + s6 * 0.1);
 
-      // ── Ring evolution ──
+      // ── Ring evolution — STAGGERED APPEARANCE ──
       rings.forEach((ring, i) => {
-        // Rotation speed: gentle motion before → fast after activation
-        const rotSpeed = (0.002 + actSmooth * 0.003 + progress * 0.006 + i * 0.002);
+        // Ring i appears at different scroll stages
+        const ringAppear = [0.0, 0.18, 0.35][i]; // ring 0 always, ring 1 at 18%, ring 2 at 35%
+        const ringVisibility = Math.max(0, Math.min(1, (progress - ringAppear) / 0.08));
+        const ringAct = ringVisibility * actSmooth;
+        
+        // Rotation speed escalates
+        const rotSpeed = (0.002 + actSmooth * 0.005 + s3 * 0.008 + s4 * 0.012 + i * 0.002);
         ring.rotation.z += rotSpeed * (i % 2 === 0 ? 1 : -1);
         ring.rotation.x += rotSpeed * 0.3 * (i % 2 === 0 ? 1 : -1);
         
-        // Rings expand as you scroll
-        const ringExpansion = 1.0 + progress * 0.5;
-        ring.scale.setScalar(ringExpansion * progressScale);
+        // Scale: dramatic expansion at stage 3-4
+        const ringScale = ringVisibility * (1.0 + s3 * 0.6 + s4 * 0.8 + s5 * 0.4);
+        ring.scale.setScalar(ringScale * orbScale);
         
-        // Ring opacity: visible outlines before → vivid after
+        // Opacity: invisible → fades in at its stage → vivid
         const ringMat = ring.material as THREE.MeshPhysicalMaterial;
-        ringMat.opacity = 0.25 + actSmooth * 0.35 + progress * 0.25;
-        ringMat.emissiveIntensity = 0.3 + actSmooth * (0.5 + progress * 1.5);
-        // Ring color evolves
-        ringMat.emissive.setHSL(0.55 + progress * 0.15 + i * 0.05, 0.7, 0.35 + actSmooth * 0.15);
-        ringMat.color.setHSL(0.55 + progress * 0.1 + i * 0.05, 0.3 + actSmooth * 0.5, 0.5 + actSmooth * 0.2);
+        ringMat.opacity = ringVisibility * (0.15 + ringAct * 0.5 + s4 * 0.3);
+        ringMat.emissiveIntensity = ringVisibility * (0.3 + ringAct * (0.8 + s4 * 2.0));
+        
+        // Color follows overall palette with offset per ring
+        ringMat.emissive.setHSL(orbH + i * 0.06, 0.7, 0.35 + actSmooth * 0.15);
+        ringMat.color.setHSL(orbH + i * 0.04, 0.4 + actSmooth * 0.4, 0.5 + actSmooth * 0.2);
         
         const bp = (ring as any)._bloomPair;
         if (bp) {
           bp.rotation.copy(ring.rotation);
           bp.scale.copy(ring.scale);
-          (bp.material as THREE.MeshBasicMaterial).opacity = 0.05 + actSmooth * (0.08 + progress * 0.08);
+          (bp.material as THREE.MeshBasicMaterial).opacity = ringVisibility * (0.05 + ringAct * 0.12);
         }
       });
 
-      // ── Sparkle orbits — activation controls visibility ──
+      // ── Satellite objects — emerge at different scroll stages ──
+      satellites.forEach((sat, si) => {
+        const od = satelliteOrbitData[si];
+        const satProgress = Math.max(0, Math.min(1, (progress - od.appearAt) / 0.1));
+        const satAct = satProgress * actSmooth;
+        
+        // Orbit position
+        const angle = time * od.speed + od.phase;
+        const orbitR = od.radius * (1.0 + s4 * 0.5);
+        sat.position.set(
+          Math.cos(angle) * orbitR * Math.cos(od.tiltX),
+          Math.sin(angle * 0.7 + od.phase) * orbitR * 0.4 + Math.sin(od.tiltZ) * orbitR * 0.3,
+          Math.sin(angle) * orbitR
+        );
+        
+        // Scale: spring-in from 0
+        const targetScale = satProgress * od.scaleTarget * (1.0 + s4 * 0.5);
+        sat.scale.setScalar(targetScale);
+        
+        // Spin
+        sat.rotation.x += 0.02 + si * 0.005;
+        sat.rotation.y += 0.015 + si * 0.008;
+        
+        // Opacity
+        const satMat = sat.material as THREE.MeshPhysicalMaterial;
+        satMat.opacity = satAct * 0.9;
+        satMat.emissiveIntensity = 0.5 + s4 * 2.0 + s6 * 1.5;
+        
+        // Color evolves with scene
+        satMat.emissive.setHSL(orbH + si * 0.08, 0.8, 0.4 + s4 * 0.15);
+        
+        // Bloom pair
+        const bp = (sat as any)._bloomPair;
+        if (bp) {
+          bp.position.copy(sat.position);
+          bp.rotation.copy(sat.rotation);
+          bp.scale.copy(sat.scale);
+          (bp.material as THREE.MeshBasicMaterial).opacity = satAct * 0.15;
+        }
+      });
+
+      // ── Energy ring — appears at stage 3, expands dramatically ──
+      energyRingPoints.visible = progress > 0.28 && actSmooth > 0.1;
+      if (energyRingPoints.visible) {
+        const erScale = s3 * 1.5 + s4 * 1.0 + s5 * 0.5;
+        energyRingPoints.scale.setScalar(erScale);
+        energyRingPoints.rotation.y = time * 0.2;
+        energyRingPoints.rotation.x = Math.sin(time * 0.1) * 0.3;
+        (energyRingMat as THREE.ShaderMaterial).uniforms.uColor.value.setHSL(orbH + 0.1, 0.9, 0.6);
+      }
+
+      // ── Sparkle orbits — dramatic expansion at stage 4 ──
       const posArr = sparkleGeometry.attributes.position.array as Float32Array;
+      const sparkleExpansion = 1.0 + s2 * 0.3 + s3 * 0.8 + s4 * 1.5; // massive expansion
       for (let i = 0; i < sparkleCount; i++) {
         const orb = sparkleOrbitData[i];
-        orb.theta += orb.speed * (0.003 + progress * 0.01);
-        orb.phi += orb.speed * (0.001 + progress * 0.004);
-        const r = orb.r * (1.0 + progress * 0.5); // expand outward with scroll
+        orb.theta += orb.speed * (0.003 + s2 * 0.01 + s4 * 0.02);
+        orb.phi += orb.speed * (0.001 + s2 * 0.004 + s4 * 0.008);
+        const r = orb.r * sparkleExpansion;
         posArr[i * 3] = r * Math.sin(orb.phi) * Math.cos(orb.theta);
         posArr[i * 3 + 1] = r * Math.sin(orb.phi) * Math.sin(orb.theta);
         posArr[i * 3 + 2] = r * Math.cos(orb.phi);
       }
       sparkleGeometry.attributes.position.needsUpdate = true;
-      (sparkleMaterial as THREE.ShaderMaterial).opacity = 0.15 + actSmooth * (0.25 + progress * 0.6);
+      (sparkleMaterial as THREE.ShaderMaterial).opacity = 0.15 + actSmooth * (0.3 + s3 * 0.4 + s4 * 0.5);
 
-      // ── Dust particles — fade in with activation ──
+      // ── Dust particles ──
       dustMaterial.uniforms.uTime.value = time;
       dustMaterial.uniforms.uScrollProgress.value = progress;
-      dustPoints.rotation.y = time * (0.01 + progress * 0.03);
-      (dustMaterial as THREE.ShaderMaterial).uniforms.uScrollProgress.value = progress;
+      dustPoints.rotation.y = time * (0.01 + s3 * 0.04 + s4 * 0.06);
 
-      // ── Nebula — grows with scroll ──
+      // ── Nebula — dramatic expansion at later stages ──
       nebulaMaterial.uniforms.uTime.value = time;
       nebulaPoints.rotation.y = time * 0.005;
-      nebulaPoints.scale.setScalar(1.0 + progress * 0.3);
+      nebulaPoints.scale.setScalar(1.0 + s3 * 0.4 + s5 * 0.6);
+      // Nebula color follows palette
+      nebulaMaterial.uniforms.uColor1.value.setHSL(orbH + 0.15, 0.6, 0.3);
+      nebulaMaterial.uniforms.uColor2.value.setHSL(orbH - 0.1, 0.4, 0.1);
 
-      // ── Stars — twinkle increases with activation ──
+      // ── Stars ──
       starMaterial.uniforms.uTime.value = time;
       starPoints.rotation.y = time * 0.003;
 
-      // ── Accent light evolution — dim ambient before, dramatic after ──
-      const lightIntensity = 0.25 + actSmooth * (0.35 + progress * 1.0);
-      accentLight1.intensity = lightIntensity;
-      accentLight2.intensity = lightIntensity;
-      accentLight3.intensity = lightIntensity * 0.6;
-      keyLight.intensity = 0.6 + actSmooth * (1.2 + progress * 0.8);
-      rimLight.intensity = 0.3 + actSmooth * (0.6 + progress * 1.0);
-      fillLight.intensity = 0.2 + actSmooth * (0.5 + progress * 0.8);
+      // ── Lighting — DRAMATIC escalation through stages ──
+      const baseLight = 0.25 + actSmooth * 0.35;
+      accentLight1.intensity = baseLight + s3 * 0.8 + s4 * 1.5 + s6 * 1.0;
+      accentLight2.intensity = baseLight + s3 * 0.6 + s4 * 1.2 + s6 * 0.8;
+      accentLight3.intensity = (baseLight + s3 * 0.4 + s4 * 0.8) * 0.6;
+      keyLight.intensity = 0.6 + actSmooth * 1.2 + s3 * 0.8 + s4 * 1.5;
+      rimLight.intensity = 0.3 + actSmooth * 0.6 + s3 * 0.5 + s4 * 1.2;
+      fillLight.intensity = 0.2 + actSmooth * 0.5 + s3 * 0.4 + s4 * 1.0;
+
+      // Light color evolution follows palette
+      const accentColor1 = new THREE.Color().setHSL(orbH + 0.3, 0.9, 0.5);
+      const accentColor2 = new THREE.Color().setHSL(orbH - 0.1, 0.8, 0.5);
+      accentLight1.color.copy(accentColor1);
+      accentLight2.color.copy(accentColor2);
+      rimLight.color.setHSL(orbH + 0.15, 0.7, 0.6);
       
+      // Moving lights with wider arcs at later stages
+      const lightRange = 4 + s3 * 3 + s4 * 4;
       accentLight1.position.set(
-        Math.sin(time * 0.3) * (4 + progress * 2),
-        Math.cos(time * 0.2) * (2 + progress * 2),
-        Math.sin(time * 0.4) * 4
+        Math.sin(time * 0.3) * lightRange,
+        Math.cos(time * 0.2) * lightRange * 0.6,
+        Math.sin(time * 0.4) * lightRange
       );
       accentLight2.position.set(
-        Math.cos(time * 0.25) * (5 + progress * 2),
-        Math.sin(time * 0.35) * (2 + progress),
-        Math.cos(time * 0.3) * 5
+        Math.cos(time * 0.25) * (lightRange + 1),
+        Math.sin(time * 0.35) * lightRange * 0.5,
+        Math.cos(time * 0.3) * (lightRange + 1)
       );
       accentLight3.position.set(
-        Math.sin(time * 0.15) * 4,
-        Math.cos(time * 0.25) * (3 + progress * 2),
-        Math.sin(time * 0.2) * 3
+        Math.sin(time * 0.15) * lightRange * 0.8,
+        Math.cos(time * 0.25) * lightRange * 0.7,
+        Math.sin(time * 0.2) * lightRange * 0.6
       );
       
-      // ── Bloom intensity: subtle before → full dramatic after ──
-      compositeMaterial.uniforms.uBloomStrength.value = 0.15 + actSmooth * (0.35 + progress * 0.4);
+      // ── Bloom — dramatic ramp ──
+      compositeMaterial.uniforms.uBloomStrength.value = 0.15 + actSmooth * (0.3 + s3 * 0.3 + s4 * 0.5 + s6 * 0.4);
 
       // ─── Multi-Pass Render Pipeline ───────────────────────────────
 
