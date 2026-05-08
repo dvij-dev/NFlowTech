@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    ScrollSections — Hatom-style scroll spacers + content overlays
@@ -209,40 +209,22 @@ const CONTENT_BLOCKS: ContentBlock[] = [
   },
 ];
 
-export default function ScrollSections() {
+interface ScrollSectionsProps {
+  activated?: boolean;
+}
+
+export default function ScrollSections({ activated = false }: ScrollSectionsProps) {
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [activated, setActivated] = useState(false);
-  const [showOverlay, setShowOverlay] = useState(true);
   const sectionRefs = useRef<HTMLDivElement[]>([]);
 
   useEffect(() => {
     const handleScroll = () => {
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
       setScrollProgress(scrollHeight > 0 ? window.scrollY / scrollHeight : 0);
-      if (window.scrollY > 10 && !activated) {
-        setActivated(true);
-        setTimeout(() => setShowOverlay(false), 2000);
-      }
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [activated]);
-
-  const handleActivate = useCallback(() => {
-    if (!activated) {
-      setActivated(true);
-      setTimeout(() => setShowOverlay(false), 2000);
-    }
-  }, [activated]);
-
-  useEffect(() => {
-    window.addEventListener('click', handleActivate);
-    window.addEventListener('touchstart', handleActivate);
-    return () => {
-      window.removeEventListener('click', handleActivate);
-      window.removeEventListener('touchstart', handleActivate);
-    };
-  }, [handleActivate]);
+  }, []);
 
   // Show "Scroll to explore" after activation
   useEffect(() => {
@@ -250,36 +232,13 @@ export default function ScrollSections() {
       const timer = setTimeout(() => {
         const el = document.querySelector('.scroll-prompt') as HTMLElement;
         if (el) el.style.opacity = '1';
-      }, 1500);
+      }, 2500);
       return () => clearTimeout(timer);
     }
   }, [activated]);
 
   return (
     <>
-      {/* Click-to-enter overlay */}
-      {showOverlay && (
-        <div
-          className="fixed inset-0 flex items-center justify-center pointer-events-none"
-          style={{
-            zIndex: 20,
-            opacity: activated ? 0 : 1,
-            transition: 'opacity 1.5s ease-out',
-          }}
-        >
-          <div className="text-center" style={{ marginTop: '35vh' }}>
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center animate-pulse">
-                <svg className="w-5 h-5 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-                </svg>
-              </div>
-              <span className="text-white/30 text-xs uppercase tracking-[0.3em]">Click to enter</span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Scroll spacer sections */}
       <div className="relative" style={{ zIndex: 1 }}>
         {Array.from({ length: SECTIONS_COUNT }, (_, i) => (
