@@ -308,6 +308,38 @@ function TeamSection() {
   )
 }
 
+/* ── Client Results Section ───────────────────────── */
+function ClientResults() {
+  const results = [
+    { brand: 'Seaside Marine', metric: '200+', label: 'Organic Keywords', category: 'SEO' },
+    { brand: 'KindDesigns', metric: '200K+', label: 'Total Reach', category: 'Social' },
+    { brand: 'Breezy Permits', metric: '5K+', label: 'Impressions/Month', category: 'SEO' },
+    { brand: 'OFW Law', metric: '150+', label: 'Leads/Month', category: 'PPC' },
+    { brand: 'MyCarrier TMS', metric: '45%', label: 'Lower CPA', category: 'Google Ads' },
+    { brand: 'Mango Superfoods', metric: '4.8X', label: 'ROAS Achieved', category: 'Meta Ads' },
+  ]
+  return (
+    <section className="relative py-20 overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-r from-sky-500/[0.03] via-transparent to-sky-500/[0.03]" />
+      <div className="relative z-10 px-8 md:px-16 lg:px-24 mb-12 text-center">
+        <p className="font-mono text-sky-400/60 text-xs uppercase tracking-[0.3em] mb-3">Proven Results</p>
+        <h2 className="text-2xl md:text-3xl font-display font-bold text-white">
+          Real Impact, <span className="gradient-text">Real Numbers</span>
+        </h2>
+      </div>
+      <div className="relative z-10 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-px bg-white/[0.04]">
+        {results.map((r) => (
+          <div key={r.brand} className="bg-navy-950 p-6 text-center group hover:bg-white/[0.02] transition-colors">
+            <p className="text-2xl md:text-3xl font-bold text-white mb-1">{r.metric}</p>
+            <p className="text-xs text-slate-400 mb-3">{r.label}</p>
+            <p className="text-[10px] font-mono text-sky-400/50 uppercase tracking-wider">{r.brand} · {r.category}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 /* ── CTA Section ──────────────────────────────────── */
 function CTASection() {
   return (
@@ -372,6 +404,9 @@ export default function Home() {
 
       {/* Team */}
       <TeamSection />
+
+      {/* Client Results */}
+      <ClientResults />
 
       {/* CTA */}
       <CTASection />
