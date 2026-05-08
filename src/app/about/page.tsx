@@ -138,7 +138,7 @@ export default function AboutPage() {
                   />
                 </div>
                 <h4 className="text-sm font-semibold text-white leading-tight">{member.name}</h4>
-                <p className="text-[11px] text-slate-500 mt-1">{member.role}</p>
+                <p className="text-[11px] text-slate-400 mt-1">{member.role}</p>
               </div>
             </AnimatedSection>
           ))}

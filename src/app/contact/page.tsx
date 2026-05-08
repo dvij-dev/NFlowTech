@@ -35,7 +35,7 @@ export default function ContactPage() {
                   They say success follows when we move forward together, so let&apos;s connect and start building that journey. We&apos;d love to hear from you.
                 </p>
                 <p className="text-sky-400 font-medium mb-1">Got a thought? A Hello is all it takes to start.</p>
-                <p className="text-sm text-slate-500">No pitches. No delays. Just meaningful conversations and real solutions.</p>
+                <p className="text-sm text-slate-400">No pitches. No delays. Just meaningful conversations and real solutions.</p>
               </div>
 
               <div className="space-y-4">
@@ -88,62 +88,62 @@ export default function ContactPage() {
               <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
                 <div className="grid sm:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-sm text-slate-400 mb-2">First Name*</label>
+                    <label htmlFor="fname" className="block text-sm text-slate-400 mb-2">First Name*</label>
                     <input
                       type="text"
                       className="w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/20 transition-colors"
-                      placeholder="John"
+                      id="fname" placeholder="John"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-slate-400 mb-2">Last Name*</label>
+                    <label htmlFor="lname" className="block text-sm text-slate-400 mb-2">Last Name*</label>
                     <input
                       type="text"
                       className="w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/20 transition-colors"
-                      placeholder="Doe"
+                      id="lname" placeholder="Doe"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-2">Email*</label>
+                  <label htmlFor="email" className="block text-sm text-slate-400 mb-2">Email*</label>
                   <input
                     type="email"
                     className="w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/20 transition-colors"
-                    placeholder="john@example.com"
+                    id="email" placeholder="john@example.com"
                   />
                 </div>
                 <div className="grid sm:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-sm text-slate-400 mb-2">Phone Number*</label>
+                    <label htmlFor="phone" className="block text-sm text-slate-400 mb-2">Phone Number*</label>
                     <input
                       type="tel"
                       className="w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/20 transition-colors"
-                      placeholder="+1 (234) 567-8900"
+                      id="phone" placeholder="+1 (234) 567-8900"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-slate-400 mb-2">Website*</label>
+                    <label htmlFor="website" className="block text-sm text-slate-400 mb-2">Website*</label>
                     <input
                       type="url"
                       className="w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/20 transition-colors"
-                      placeholder="https://example.com"
+                      id="website" placeholder="https://example.com"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-2">Industry*</label>
+                  <label htmlFor="industry" className="block text-sm text-slate-400 mb-2">Industry*</label>
                   <input
                     type="text"
                     className="w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/20 transition-colors"
-                    placeholder="E-commerce, SaaS, Healthcare..."
+                    id="industry" placeholder="E-commerce, SaaS, Healthcare..."
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-2">Message*</label>
+                  <label htmlFor="message" className="block text-sm text-slate-400 mb-2">Message*</label>
                   <textarea
                     rows={5}
                     className="w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/20 transition-colors resize-none"
-                    placeholder="Tell us about your project..."
+                    id="message" placeholder="Tell us about your project..."
                   />
                 </div>
                 <button type="submit" className="btn-primary w-full justify-center">

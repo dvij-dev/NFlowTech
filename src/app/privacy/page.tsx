@@ -34,7 +34,7 @@ export default function PrivacyPage() {
               If you have any questions about this Privacy Policy, please contact us at{' '}
               <a href={`mailto:${siteConfig.email}`} className="text-sky-400 hover:text-sky-300">{siteConfig.email}</a>.
             </p>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-400">
               Copyright © {new Date().getFullYear()} {siteConfig.legalName}. All Rights Reserved.
             </p>
           </div>

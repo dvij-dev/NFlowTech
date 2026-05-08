@@ -53,7 +53,7 @@ export function Footer() {
             <p className="text-sm text-slate-400 leading-relaxed mb-4">
               {siteConfig.tagline}
             </p>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-400">
               Subscribe to our newsletter for the latest updates and insights.
             </p>
           </div>
@@ -109,7 +109,7 @@ export function Footer() {
 
       {/* Bottom bar */}
       <div className="section-pad py-6 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-400">
           Copyright © {new Date().getFullYear()} {siteConfig.legalName}. All Rights Reserved.
         </p>
         <div className="flex items-center gap-6">
@@ -117,7 +117,7 @@ export function Footer() {
             { label: 'Privacy Policy', href: '/privacy' },
             { label: 'Terms & Conditions', href: '/privacy' },
           ].map((l) => (
-            <Link key={l.label} href={l.href} className="text-xs text-slate-500 hover:text-slate-300 transition-colors">
+            <Link key={l.label} href={l.href} className="text-xs text-slate-400 hover:text-slate-300 transition-colors">
               {l.label}
             </Link>
           ))}
