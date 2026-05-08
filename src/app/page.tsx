@@ -79,7 +79,8 @@ export default function Home() {
       {/* ═══ Inversion overlay ═══
           White overlay with mix-blend-mode: difference
           Creates "inverted colors" look (white bg, dark outlines)
-          Fades out on activation → true colors bleed in */}
+          Fades out on activation → true colors bleed in
+          z-index 100 = above everything so ALL elements get inverted */}
       <div
         style={{
           position: 'fixed',
@@ -88,12 +89,12 @@ export default function Home() {
           opacity: overlayOpacity,
           transition: 'opacity 2.5s cubic-bezier(0.25, 0.1, 0.25, 1)',
           mixBlendMode: 'difference',
-          zIndex: 4,
+          zIndex: 100,
           pointerEvents: 'none',
         }}
       />
 
-      {/* Click-to-enter prompt — always visible pre-activation */}
+      {/* Click-to-enter prompt — below inversion overlay so it gets inverted too */}
       {!activated && (
         <div
           className="fixed inset-0 flex items-end justify-center pb-[15vh]"
