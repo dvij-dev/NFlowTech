@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { siteConfig, caseStudies, services, founder } from '@/data/site-data'
+import { siteConfig, caseStudies, services, founder, teamMembers } from '@/data/site-data'
 import dynamic from 'next/dynamic'
 
 const BigBangJourney = dynamic(() => import('@/components/BigBangJourney'), {
@@ -246,6 +246,68 @@ function FounderSection() {
   )
 }
 
+/* ── Team Section ─────────────────────────────────── */
+function TeamSection() {
+  const sectionRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const cards = sectionRef.current?.querySelectorAll('.team-card')
+    if (!cards) return
+
+    cards.forEach((card, i) => {
+      gsap.fromTo(card,
+        { y: 40, opacity: 0 },
+        {
+          y: 0, opacity: 1, duration: 0.6,
+          delay: i * 0.05,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: card, start: 'top 90%', toggleActions: 'play none none none' },
+        }
+      )
+    })
+  }, [])
+
+  return (
+    <section ref={sectionRef} className="relative py-32 px-8 md:px-16 lg:px-24">
+      <RevealOnScroll direction="up">
+        <p className="label mb-4">Our Team</p>
+        <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+          18+ Specialists,{' '}
+          <span className="gradient-text">Two Continents.</span>
+        </h2>
+        <p className="text-white/40 max-w-2xl mb-16">
+          Every team member is a specialist in their craft — from PPC and SEO
+          to creative design and business development.
+        </p>
+      </RevealOnScroll>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
+        {teamMembers.map((member, i) => (
+          <div key={i} className="team-card group text-center">
+            <div className="relative w-full aspect-square rounded-2xl overflow-hidden mb-3
+              border border-white/[0.06] group-hover:border-sky-400/30 transition-all duration-500">
+              <Image
+                src={member.image}
+                alt={member.name}
+                fill
+                className="object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-navy-950/80 via-transparent to-transparent
+                opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            </div>
+            <h4 className="text-sm font-semibold text-white group-hover:text-sky-400 transition-colors">
+              {member.name}
+            </h4>
+            <p className="text-[10px] tracking-wider uppercase text-white/30 font-mono mt-0.5">
+              {member.role}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 /* ── CTA Section ──────────────────────────────────── */
 function CTASection() {
   return (
@@ -307,6 +369,9 @@ export default function Home() {
 
       {/* Founder */}
       <FounderSection />
+
+      {/* Team */}
+      <TeamSection />
 
       {/* CTA */}
       <CTASection />

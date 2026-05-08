@@ -314,14 +314,14 @@ function buildScene(canvas: HTMLCanvasElement) {
   }
 
   const STAR_CFG = [
-    { pos: [0, 0, 0], color: COLORS.cyan, coreSize: 0.6, glowSize: 4, activate: 0.45, label: 'Precision Performance',
-      orbits: [{ r: 4, count: 3, speed: 0.12, tilt: 0.1, pColor: COLORS.cyan }] },
-    { pos: [-8, 3, -2], color: COLORS.magenta, coreSize: 0.5, glowSize: 3.5, activate: 0.60, label: 'Social Engine',
-      orbits: [{ r: 3.5, count: 3, speed: 0.10, tilt: -0.15, pColor: COLORS.magenta }] },
-    { pos: [7, -2.5, -3], color: COLORS.green, coreSize: 0.45, glowSize: 3, activate: 0.75, label: 'Organic & Design',
+    { pos: [0, 0, 0], color: COLORS.cyan, coreSize: 0.9, glowSize: 6, activate: 0.45, label: 'Precision Performance',
+      orbits: [{ r: 4.5, count: 3, speed: 0.12, tilt: 0.1, pColor: COLORS.cyan }] },
+    { pos: [-8, 3, -2], color: COLORS.magenta, coreSize: 0.8, glowSize: 5.5, activate: 0.60, label: 'Social Engine',
+      orbits: [{ r: 4, count: 3, speed: 0.10, tilt: -0.15, pColor: COLORS.magenta }] },
+    { pos: [7, -2.5, -3], color: COLORS.green, coreSize: 0.7, glowSize: 5, activate: 0.75, label: 'Organic & Design',
       orbits: [
-        { r: 3, count: 2, speed: 0.08, tilt: 0.2, pColor: COLORS.green },
-        { r: 5, count: 3, speed: 0.06, tilt: -0.1, pColor: COLORS.gold },
+        { r: 3.5, count: 2, speed: 0.08, tilt: 0.2, pColor: COLORS.green },
+        { r: 5.5, count: 3, speed: 0.06, tilt: -0.1, pColor: COLORS.gold },
       ] },
   ]
 
@@ -547,8 +547,8 @@ function buildScene(canvas: HTMLCanvasElement) {
         const bp = (p - 0.30) / 0.15 // 0→1
         const eBp = 1 - Math.pow(1 - bp, 2)
 
-        // Egg dissolves FAST — hide after 30% through bang
-        if (bp > 0.3) {
+        // Egg dissolves FAST — hide after 20% through bang
+        if (bp > 0.2) {
           eggShell.visible = false
           eggWire.visible = false
           eggCore.visible = false
@@ -559,16 +559,16 @@ function buildScene(canvas: HTMLCanvasElement) {
           eggWire.visible = true
           eggCore.visible = true
           eggGlow.visible = true
-          const eggFade = 1 - bp * 3.3 // 0→1 over first 30%
-          eggShellMat.opacity = 0.5 * eggFade
-          eggShell.scale.setScalar(1.2 + bp * 5)
-          eggWireMat.opacity = 0.4 * eggFade
-          eggWire.scale.setScalar(1.2 + bp * 5)
+          const eggFade = 1 - bp * 5.0 // 0→1 over first 20%
+          eggShellMat.opacity = 0.4 * eggFade
+          eggShell.scale.setScalar(1.3 + bp * 8) // expand faster
+          eggWireMat.opacity = 0.3 * eggFade
+          eggWire.scale.setScalar(1.3 + bp * 8)
           eggCoreMat.opacity = eggFade
-          eggCore.scale.setScalar(2.0 + bp * 8)
-          eggGlow.material.opacity = eggFade * 0.6
-          eggGlow.scale.setScalar(12 + bp * 15)
-          eggLight.intensity = 20 * eggFade
+          eggCore.scale.setScalar(2.5 + bp * 12) // core flashes bigger
+          eggGlow.material.opacity = eggFade * 0.8
+          eggGlow.scale.setScalar(15 + bp * 20)
+          eggLight.intensity = 25 * eggFade
         }
 
         // Fragments fly far and fade
@@ -652,17 +652,18 @@ function buildScene(canvas: HTMLCanvasElement) {
           const vis = Math.max(0, Math.min(1, (p - sys.activateAt) / 0.06))
 
           if (vis > 0) {
-            const breathe = 1 + Math.sin(t * 2.5) * 0.06
+            const breathe = 1 + Math.sin(t * 2.5) * 0.08
             ;(sys.core.material as THREE.MeshBasicMaterial).opacity = vis
-            sys.core.scale.setScalar(breathe * vis)
-            sys.glow.material.opacity = vis * 0.6
-            sys.light.intensity = vis * 6
+            sys.core.scale.setScalar(breathe * vis * 1.2)
+            sys.glow.material.opacity = vis * 0.8
+            sys.glow.scale.set(1.2, 1.2, 1.2)
+            sys.light.intensity = vis * 10
 
             activePos.push(sys.pos)
 
-            // Rings — brighter so they're visible
+            // Rings — prominent for visual impact
             sys.rings.forEach(ring => {
-              ;(ring.material as THREE.LineBasicMaterial).opacity = vis * 0.5
+              ;(ring.material as THREE.LineBasicMaterial).opacity = vis * 0.7
             })
 
             // Planets orbit
@@ -705,7 +706,7 @@ function buildScene(canvas: HTMLCanvasElement) {
             }
           }
           beamGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts), 3))
-          beamMat.opacity = 0.15
+          beamMat.opacity = 0.25
         } else {
           beamMat.opacity = 0
         }
